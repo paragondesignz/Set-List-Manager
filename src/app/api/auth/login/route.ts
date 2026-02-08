@@ -13,7 +13,7 @@ function jsonError(status: number, message: string) {
 }
 
 export async function POST(req: Request) {
-  const secret = process.env.CLO_AUTH_TOKEN;
+  const secret = process.env.CLO_AUTH_TOKEN?.trim();
   if (!secret) return jsonError(400, "Auth is not configured on this environment.");
 
   let body: unknown;
