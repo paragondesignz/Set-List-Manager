@@ -80,7 +80,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const secret = process.env.CLO_AUTH_TOKEN;
+  const secret = process.env.CLO_AUTH_TOKEN?.trim();
   // If no auth configured, do not block.
   if (!secret) return NextResponse.next();
 
