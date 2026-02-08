@@ -137,7 +137,7 @@ export default function ExportPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-xl font-bold tracking-tight font-[var(--font-playfair)]">
+          <h1 className="text-xl font-bold tracking-tight">
             Export: {setlist.name}
           </h1>
           <p className="text-muted-foreground text-sm">

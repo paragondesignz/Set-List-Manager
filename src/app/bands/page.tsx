@@ -106,7 +106,7 @@ export default function BandsPage() {
             </Link>
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight font-[var(--font-playfair)]">
+            <h1 className="text-2xl font-bold tracking-tight">
               Manage Bands
             </h1>
             <p className="text-muted-foreground text-sm">

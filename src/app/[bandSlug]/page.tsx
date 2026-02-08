@@ -36,7 +36,7 @@ export default function BandDashboardPage() {
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-2 font-[var(--font-playfair)]">
+        <h1 className="text-3xl font-bold tracking-tight mb-2">
           {band.name}
         </h1>
         <p className="text-muted-foreground">Dashboard overview</p>

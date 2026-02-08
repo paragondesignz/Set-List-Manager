@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { Button } from "@/components/ui/button";
 import { LogOut, ChevronDown } from "lucide-react";
 import {
@@ -26,11 +28,11 @@ type HeaderProps = {
 
 export function Header({ band, bands }: HeaderProps) {
   const router = useRouter();
+  const { signOut } = useAuthActions();
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await signOut();
     router.push("/login");
-    router.refresh();
   };
 
   return (
@@ -38,10 +40,10 @@ export function Header({ band, bands }: HeaderProps) {
       <div className="container mx-auto px-4 h-12 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link
-            href="/"
-            className="font-semibold text-base text-foreground"
+            href="/dashboard"
+            className="flex items-center"
           >
-            SLM
+            <Image src="/set-list-creator-logo-trans.png" alt="Set List Creator" width={28} height={28} />
           </Link>
 
           {band && (

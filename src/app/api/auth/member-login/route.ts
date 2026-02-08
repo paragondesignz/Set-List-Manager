@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { z } from "zod";
-import { MEMBER_AUTH_COOKIE_NAME, signMemberAuthCookie } from "../_utils";
+import crypto from "crypto";
 
 export const runtime = "nodejs";
+
+const MEMBER_AUTH_COOKIE_NAME = "clo_member_auth";
+
+function base64Url(buf: Buffer) {
+  return buf
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+function signMemberAuthCookie(token: string, memberId: string, bandSlug: string) {
+  const payload = `${token}:${memberId}:${bandSlug}`;
+  const h = crypto.createHmac("sha256", token).update(payload).digest();
+  return `${base64Url(Buffer.from(payload))}.${base64Url(h)}`;
+}
 
 const BodySchema = z.object({
   token: z.string().min(1).max(100)

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 const setlistStatus = v.union(
   v.literal("draft"),
@@ -14,10 +15,24 @@ const setsConfigSchema = v.array(
   })
 );
 
+async function assertBandOwner(ctx: any, bandId: any) {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new Error("Not authenticated");
+  const band = await ctx.db.get(bandId);
+  if (!band || band.userId !== userId) throw new Error("Not authorized");
+  return userId;
+}
+
 export const get = query({
   args: { setlistId: v.id("setlists") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.setlistId);
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const setlist = await ctx.db.get(args.setlistId);
+    if (!setlist) return null;
+    const band = await ctx.db.get(setlist.bandId);
+    if (!band || band.userId !== userId) return null;
+    return setlist;
   }
 });
 
@@ -28,6 +43,11 @@ export const list = query({
     status: v.optional(setlistStatus)
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const band = await ctx.db.get(args.bandId);
+    if (!band || band.userId !== userId) return [];
+
     const includeArchived = args.includeArchived ?? false;
 
     let results = await ctx.db
@@ -58,6 +78,8 @@ export const create = mutation({
     notes: v.optional(v.string())
   },
   handler: async (ctx, args) => {
+    await assertBandOwner(ctx, args.bandId);
+
     const now = Date.now();
     return await ctx.db.insert("setlists", {
       bandId: args.bandId,
@@ -86,6 +108,7 @@ export const update = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.setlistId);
     if (!existing) throw new Error("Setlist not found.");
+    await assertBandOwner(ctx, existing.bandId);
 
     const update: Record<string, unknown> = { updatedAt: Date.now() };
 
@@ -104,6 +127,7 @@ export const archive = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.setlistId);
     if (!existing) throw new Error("Setlist not found.");
+    await assertBandOwner(ctx, existing.bandId);
     await ctx.db.patch(args.setlistId, {
       archivedAt: args.archived ? Date.now() : undefined,
       status: args.archived ? "archived" : "draft",
@@ -117,6 +141,7 @@ export const finalise = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.setlistId);
     if (!existing) throw new Error("Setlist not found.");
+    await assertBandOwner(ctx, existing.bandId);
     await ctx.db.patch(args.setlistId, {
       status: "finalised",
       updatedAt: Date.now()
@@ -147,6 +172,7 @@ export const duplicate = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.setlistId);
     if (!existing) throw new Error("Setlist not found.");
+    await assertBandOwner(ctx, existing.bandId);
 
     const now = Date.now();
     const name = args.newName?.trim() || `${existing.name} (copy)`;
@@ -187,6 +213,10 @@ export const duplicate = mutation({
 export const remove = mutation({
   args: { setlistId: v.id("setlists") },
   handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.setlistId);
+    if (!existing) throw new Error("Setlist not found.");
+    await assertBandOwner(ctx, existing.bandId);
+
     // Delete all items first
     const items = await ctx.db
       .query("setlistItems")
@@ -209,6 +239,8 @@ export const createFromTemplate = mutation({
     gigDate: v.optional(v.number())
   },
   handler: async (ctx, args) => {
+    await assertBandOwner(ctx, args.bandId);
+
     const template = await ctx.db.get(args.templateId);
     if (!template) throw new Error("Template not found.");
     if (template.bandId !== args.bandId) throw new Error("Template doesn't belong to this band.");

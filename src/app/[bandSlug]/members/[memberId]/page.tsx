@@ -517,7 +517,7 @@ function SingleMemberEmailDialog({
     }
 
     html += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />`;
-    html += `<p style="color: #9ca3af; font-size: 12px; margin: 0;">Sent via Set List Manager</p>`;
+    html += `<p style="color: #9ca3af; font-size: 12px; margin: 0;">Sent via Set List Creator</p>`;
     html += `</div>`;
 
     return html;

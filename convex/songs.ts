@@ -1,13 +1,28 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { normalizeForDedup, normalizeForDedupTight } from "./_utils/normalize";
 
 const tagValues = v.array(v.string());
 
+async function assertBandOwner(ctx: any, bandId: any) {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new Error("Not authenticated");
+  const band = await ctx.db.get(bandId);
+  if (!band || band.userId !== userId) throw new Error("Not authorized");
+  return userId;
+}
+
 export const get = query({
   args: { songId: v.id("songs") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.songId);
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const song = await ctx.db.get(args.songId);
+    if (!song) return null;
+    const band = await ctx.db.get(song.bandId);
+    if (!band || band.userId !== userId) return null;
+    return song;
   }
 });
 
@@ -23,6 +38,11 @@ export const list = query({
     maxEnergyLevel: v.optional(v.number())
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const band = await ctx.db.get(args.bandId);
+    if (!band || band.userId !== userId) return [];
+
     const includeArchived = args.includeArchived ?? false;
     const search = (args.search ?? "").trim().toLowerCase();
     const filterTags = args.tags ?? [];
@@ -73,6 +93,8 @@ export const create = mutation({
     youtubeUrl: v.optional(v.string())
   },
   handler: async (ctx, args) => {
+    await assertBandOwner(ctx, args.bandId);
+
     const now = Date.now();
     const normalizedTitle = normalizeForDedup(args.title);
     const normalizedArtist = normalizeForDedup(args.artist);
@@ -142,6 +164,7 @@ export const update = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.songId);
     if (!existing) throw new Error("Song not found.");
+    await assertBandOwner(ctx, existing.bandId);
 
     const title = (args.patch.title ?? existing.title).trim();
     const artist = (args.patch.artist ?? existing.artist).trim();
@@ -204,6 +227,7 @@ export const archive = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.songId);
     if (!existing) throw new Error("Song not found.");
+    await assertBandOwner(ctx, existing.bandId);
     await ctx.db.patch(args.songId, {
       archivedAt: args.archived ? Date.now() : undefined,
       updatedAt: Date.now()
@@ -217,14 +241,20 @@ export const bulkArchive = mutation({
     archived: v.boolean()
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
     const now = Date.now();
     for (const songId of args.songIds) {
       const existing = await ctx.db.get(songId);
       if (existing) {
-        await ctx.db.patch(songId, {
-          archivedAt: args.archived ? now : undefined,
-          updatedAt: now
-        });
+        const band = await ctx.db.get(existing.bandId);
+        if (band && band.userId === userId) {
+          await ctx.db.patch(songId, {
+            archivedAt: args.archived ? now : undefined,
+            updatedAt: now
+          });
+        }
       }
     }
   }
@@ -237,23 +267,29 @@ export const bulkUpdateTags = mutation({
     removeTags: v.optional(v.array(v.string()))
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
     const now = Date.now();
     for (const songId of args.songIds) {
       const existing = await ctx.db.get(songId);
       if (existing) {
-        let tags = [...existing.tags];
-        if (args.addTags) {
-          for (const tag of args.addTags) {
-            if (!tags.includes(tag)) tags.push(tag);
+        const band = await ctx.db.get(existing.bandId);
+        if (band && band.userId === userId) {
+          let tags = [...existing.tags];
+          if (args.addTags) {
+            for (const tag of args.addTags) {
+              if (!tags.includes(tag)) tags.push(tag);
+            }
           }
+          if (args.removeTags) {
+            tags = tags.filter((t) => !args.removeTags!.includes(t));
+          }
+          await ctx.db.patch(songId, {
+            tags,
+            updatedAt: now
+          });
         }
-        if (args.removeTags) {
-          tags = tags.filter((t) => !args.removeTags!.includes(t));
-        }
-        await ctx.db.patch(songId, {
-          tags,
-          updatedAt: now
-        });
       }
     }
   }
@@ -262,6 +298,10 @@ export const bulkUpdateTags = mutation({
 export const remove = mutation({
   args: { songId: v.id("songs") },
   handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.songId);
+    if (!existing) throw new Error("Song not found.");
+    await assertBandOwner(ctx, existing.bandId);
+
     // Remove from any setlists first
     const items = await ctx.db
       .query("setlistItems")
@@ -279,6 +319,7 @@ export const incrementPlayCount = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.songId);
     if (!existing) throw new Error("Song not found.");
+    await assertBandOwner(ctx, existing.bandId);
     await ctx.db.patch(args.songId, {
       playCount: existing.playCount + 1,
       lastPlayedAt: Date.now(),
@@ -303,6 +344,8 @@ export const bulkImport = mutation({
     )
   },
   handler: async (ctx, args) => {
+    await assertBandOwner(ctx, args.bandId);
+
     const now = Date.now();
     const results: Array<{
       status: "inserted" | "duplicate" | "skipped";

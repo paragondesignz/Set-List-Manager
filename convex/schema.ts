@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 const setlistStatus = v.union(
   v.literal("draft"),
@@ -8,15 +9,36 @@ const setlistStatus = v.union(
 );
 
 export default defineSchema({
+  ...authTables,
+
+  // Extend the users table with subscription fields
+  users: defineTable({
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    image: v.optional(v.string()),
+    isAnonymous: v.optional(v.boolean()),
+    // Stripe subscription fields
+    stripeCustomerId: v.optional(v.string()),
+    stripeSubscriptionId: v.optional(v.string()),
+    subscriptionStatus: v.optional(v.string()), // "trialing" | "active" | "past_due" | "canceled" | "none"
+    trialEndsAt: v.optional(v.number()),
+    currentPeriodEnd: v.optional(v.number()),
+  })
+    .index("email", ["email"])
+    .index("by_stripeCustomerId", ["stripeCustomerId"]),
+
   bands: defineTable({
     name: v.string(),
     slug: v.string(),
+    userId: v.optional(v.id("users")),
     archivedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number()
   })
     .index("by_slug", ["slug"])
-    .index("by_archivedAt", ["archivedAt"]),
+    .index("by_archivedAt", ["archivedAt"])
+    .index("by_userId", ["userId"]),
 
   songs: defineTable({
     bandId: v.id("bands"),

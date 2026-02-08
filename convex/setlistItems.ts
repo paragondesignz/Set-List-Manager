@@ -1,9 +1,27 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
+
+async function assertSetlistOwner(ctx: any, setlistId: any) {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new Error("Not authenticated");
+  const setlist = await ctx.db.get(setlistId);
+  if (!setlist) throw new Error("Setlist not found");
+  const band = await ctx.db.get(setlist.bandId);
+  if (!band || band.userId !== userId) throw new Error("Not authorized");
+  return userId;
+}
 
 export const listBySetlist = query({
   args: { setlistId: v.id("setlists") },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const setlist = await ctx.db.get(args.setlistId);
+    if (!setlist) return [];
+    const band = await ctx.db.get(setlist.bandId);
+    if (!band || band.userId !== userId) return [];
+
     const items = await ctx.db
       .query("setlistItems")
       .withIndex("by_setlistId", (q) => q.eq("setlistId", args.setlistId))
@@ -26,6 +44,8 @@ export const addSong = mutation({
     isPinned: v.optional(v.boolean())
   },
   handler: async (ctx, args) => {
+    await assertSetlistOwner(ctx, args.setlistId);
+
     const now = Date.now();
 
     // Get existing items in this setlist
@@ -74,6 +94,7 @@ export const updateItem = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.itemId);
     if (!existing) throw new Error("Item not found.");
+    await assertSetlistOwner(ctx, existing.setlistId);
 
     const update: Record<string, unknown> = {};
     if (args.patch.gigNotes !== undefined) update.gigNotes = args.patch.gigNotes;
@@ -94,6 +115,7 @@ export const moveItem = mutation({
   handler: async (ctx, args) => {
     const item = await ctx.db.get(args.itemId);
     if (!item) throw new Error("Item not found.");
+    await assertSetlistOwner(ctx, item.setlistId);
 
     const fromSetIndex = item.setIndex;
     const fromPosition = item.position;
@@ -157,6 +179,7 @@ export const removeItem = mutation({
   handler: async (ctx, args) => {
     const item = await ctx.db.get(args.itemId);
     if (!item) throw new Error("Item not found.");
+    await assertSetlistOwner(ctx, item.setlistId);
 
     // Get items in same set
     const allItems = await ctx.db
@@ -184,6 +207,8 @@ export const clearSet = mutation({
     keepPinned: v.optional(v.boolean())
   },
   handler: async (ctx, args) => {
+    await assertSetlistOwner(ctx, args.setlistId);
+
     const keepPinned = args.keepPinned ?? false;
 
     const items = await ctx.db
@@ -219,6 +244,8 @@ export const clearAll = mutation({
     keepPinned: v.optional(v.boolean())
   },
   handler: async (ctx, args) => {
+    await assertSetlistOwner(ctx, args.setlistId);
+
     const keepPinned = args.keepPinned ?? false;
 
     const items = await ctx.db
@@ -262,6 +289,7 @@ export const swapSong = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.itemId);
     if (!existing) throw new Error("Item not found.");
+    await assertSetlistOwner(ctx, existing.setlistId);
 
     // Check if the new song is already in this setlist
     const items = await ctx.db

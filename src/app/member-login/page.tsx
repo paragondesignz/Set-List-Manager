@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Music, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export default function MemberLoginPage() {
@@ -49,8 +50,8 @@ export default function MemberLoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Music className="h-6 w-6 text-primary" />
+          <div className="mx-auto mb-4 flex items-center justify-center">
+            <Image src="/set-list-creator-logo-trans.png" alt="Set List Creator" width={48} height={48} />
           </div>
           <CardTitle className="text-xl">Band Member Access</CardTitle>
           <CardDescription>

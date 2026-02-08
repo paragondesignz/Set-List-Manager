@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 function slugify(name: string): string {
   return name
@@ -14,8 +15,14 @@ function slugify(name: string): string {
 export const list = query({
   args: { includeArchived: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
     const includeArchived = args.includeArchived ?? false;
-    const all = await ctx.db.query("bands").collect();
+    const all = await ctx.db
+      .query("bands")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
     return all
       .filter((b) => (includeArchived ? true : b.archivedAt === undefined))
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -25,23 +32,34 @@ export const list = query({
 export const get = query({
   args: { bandId: v.id("bands") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.bandId);
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const band = await ctx.db.get(args.bandId);
+    if (!band || band.userId !== userId) return null;
+    return band;
   }
 });
 
 export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const band = await ctx.db
       .query("bands")
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .first();
+    if (!band || band.userId !== userId) return null;
+    return band;
   }
 });
 
 export const create = mutation({
   args: { name: v.string() },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
     const name = args.name.trim();
     if (!name) throw new Error("Band name is required");
 
@@ -64,6 +82,7 @@ export const create = mutation({
     return await ctx.db.insert("bands", {
       name,
       slug,
+      userId,
       createdAt: now,
       updatedAt: now
     });
@@ -76,8 +95,12 @@ export const update = mutation({
     name: v.string()
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
     const existing = await ctx.db.get(args.bandId);
     if (!existing) throw new Error("Band not found");
+    if (existing.userId !== userId) throw new Error("Not authorized");
 
     const name = args.name.trim();
     if (!name) throw new Error("Band name is required");
@@ -111,8 +134,13 @@ export const update = mutation({
 export const archive = mutation({
   args: { bandId: v.id("bands"), archived: v.boolean() },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
     const existing = await ctx.db.get(args.bandId);
     if (!existing) throw new Error("Band not found");
+    if (existing.userId !== userId) throw new Error("Not authorized");
+
     await ctx.db.patch(args.bandId, {
       archivedAt: args.archived ? Date.now() : undefined,
       updatedAt: Date.now()
@@ -123,6 +151,13 @@ export const archive = mutation({
 export const remove = mutation({
   args: { bandId: v.id("bands") },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const existing = await ctx.db.get(args.bandId);
+    if (!existing) throw new Error("Band not found");
+    if (existing.userId !== userId) throw new Error("Not authorized");
+
     // Delete all related data
     const songs = await ctx.db
       .query("songs")

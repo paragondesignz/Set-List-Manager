@@ -1,5 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
+
+async function assertBandOwner(ctx: any, bandId: any) {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new Error("Not authenticated");
+  const band = await ctx.db.get(bandId);
+  if (!band || band.userId !== userId) throw new Error("Not authorized");
+  return userId;
+}
 
 export const list = query({
   args: {
@@ -7,6 +16,11 @@ export const list = query({
     includeArchived: v.optional(v.boolean())
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const band = await ctx.db.get(args.bandId);
+    if (!band || band.userId !== userId) return [];
+
     const includeArchived = args.includeArchived ?? false;
 
     const members = await ctx.db
@@ -23,7 +37,13 @@ export const list = query({
 export const get = query({
   args: { memberId: v.id("bandMembers") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.memberId);
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const member = await ctx.db.get(args.memberId);
+    if (!member) return null;
+    const band = await ctx.db.get(member.bandId);
+    if (!band || band.userId !== userId) return null;
+    return member;
   }
 });
 
@@ -35,6 +55,8 @@ export const create = mutation({
     role: v.string()
   },
   handler: async (ctx, args) => {
+    await assertBandOwner(ctx, args.bandId);
+
     const now = Date.now();
     return await ctx.db.insert("bandMembers", {
       bandId: args.bandId,
@@ -58,6 +80,7 @@ export const update = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.memberId);
     if (!existing) throw new Error("Member not found.");
+    await assertBandOwner(ctx, existing.bandId);
 
     const update: Record<string, unknown> = {};
     if (args.patch.name !== undefined) update.name = args.patch.name.trim();
@@ -75,6 +98,7 @@ export const archive = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.memberId);
     if (!existing) throw new Error("Member not found.");
+    await assertBandOwner(ctx, existing.bandId);
     await ctx.db.patch(args.memberId, {
       archivedAt: args.archived ? Date.now() : undefined
     });
@@ -84,6 +108,9 @@ export const archive = mutation({
 export const remove = mutation({
   args: { memberId: v.id("bandMembers") },
   handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.memberId);
+    if (!existing) throw new Error("Member not found.");
+    await assertBandOwner(ctx, existing.bandId);
     await ctx.db.delete(args.memberId);
   }
 });
@@ -103,6 +130,7 @@ export const generateAccessToken = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.memberId);
     if (!existing) throw new Error("Member not found.");
+    await assertBandOwner(ctx, existing.bandId);
 
     const token = generateToken();
     await ctx.db.patch(args.memberId, { accessToken: token });
@@ -115,6 +143,7 @@ export const revokeAccessToken = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.memberId);
     if (!existing) throw new Error("Member not found.");
+    await assertBandOwner(ctx, existing.bandId);
 
     await ctx.db.patch(args.memberId, { accessToken: undefined });
   }

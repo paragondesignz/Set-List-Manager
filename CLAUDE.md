@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Set List Manager is a professional setlist management app for cover bands. It allows musicians to manage songs, build setlists with drag-and-drop, auto-generate setlists using pacing algorithms, and export PDFs.
+Set List Creator is a professional setlist creation app for cover bands. It allows musicians to manage songs, build setlists with drag-and-drop, auto-generate setlists using pacing algorithms, and export PDFs.
+
+**Production URL**: https://setlistcreator.co.nz
 
 ## Commands
 
@@ -24,6 +26,8 @@ Run both `npm run dev` and `npx convex dev` in parallel for local development.
 ### Stack
 - **Frontend**: Next.js 16 (App Router), React 19, Tailwind CSS 4
 - **Backend**: Convex (serverless database + real-time functions)
+- **Auth**: Convex Auth (`@convex-dev/auth`) — Email/Password + Google OAuth
+- **Payments**: Stripe ($7.95 NZD/month subscription with 14-day free trial)
 - **UI Components**: shadcn/ui (Radix UI primitives)
 - **Drag & Drop**: @dnd-kit for setlist builder
 - **PDF Export**: @react-pdf/renderer
@@ -35,7 +39,9 @@ Run both `npm run dev` and `npx convex dev` in parallel for local development.
 3. Components use these hooks directly - no intermediate state management layer
 
 ### Database Schema (`convex/schema.ts`)
-- **bands**: Multi-band support with name and slug
+- **users**: Convex Auth users with Stripe subscription fields (stripeCustomerId, subscriptionStatus, trialEndsAt, etc.)
+- **authAccounts, authSessions, authRefreshTokens**: Convex Auth internal tables
+- **bands**: Multi-band support with name, slug, and `userId` (owner)
 - **songs**: Song library scoped to band with vocal intensity (1-5), energy level (1-5), tags, charts
 - **setlists**: Gig setlists with status workflow (draft → finalised → archived)
 - **setlistItems**: Junction table linking songs to setlists (with setIndex and position)
@@ -63,8 +69,10 @@ export function useSongsList(args) {
 - Tag-based positioning (openers, closers)
 
 ### Route Structure
-- `/login` - Token auth screen
-- `/` - Band selector or redirect to active band
+- `/` - Public landing page (with pricing section)
+- `/login` - Email/password + Google OAuth sign-in/sign-up
+- `/subscribe` - Subscription paywall (shown when trial expires)
+- `/dashboard` - Band selector or redirect to active band
 - `/bands` - Manage bands
 - `/[bandSlug]` - Band dashboard
 - `/[bandSlug]/songs` - Song library
@@ -77,27 +85,51 @@ export function useSongsList(args) {
 - `/[bandSlug]/setlists/[setlistId]/export` - Export options
 - `/[bandSlug]/members` - Band members
 - `/[bandSlug]/templates` - Setlist templates
+- `/member-login` - Band member access (separate flow, cookie-based)
 
 ### Authentication
-Simple HMAC-based auth cookie (`CLO_AUTH_TOKEN` env var). Login routes at `/api/auth/*`.
-Middleware at `middleware.ts` redirects unauthenticated users to `/login`.
+- **Primary auth**: Convex Auth (email/password + Google OAuth via `@convex-dev/auth`)
+- **Providers**: `convex/auth.ts` configures Google and Password providers
+- **Middleware**: `src/middleware.ts` uses `convexAuthNextjsMiddleware` to protect routes
+- **Layout**: Root layout wraps with `ConvexAuthNextjsServerProvider`, providers.tsx uses `ConvexAuthNextjsProvider`
+- **Band member auth**: Separate cookie-based flow (`clo_member_auth`) for read-only band member access
+- All Convex queries/mutations check `getAuthUserId(ctx)` and verify band ownership
+
+### Subscription System
+- **Stripe** handles payments: $7.95 NZD/month with 14-day free trial
+- **Subscription status** stored on users table: `subscriptionStatus`, `trialEndsAt`, `currentPeriodEnd`
+- **`useSubscription` hook** (`src/hooks/useSubscription.ts`) provides `isActive`, `isTrial`, `isExpired`, `daysLeft`
+- **Subscription gates** in `dashboard/page.tsx` and `[bandSlug]/layout.tsx` redirect to `/subscribe` when expired
+- **Stripe routes**: `/api/stripe/checkout` (create session), `/api/stripe/portal` (manage billing), `/api/stripe/webhook` (handle events)
 
 ### Design System
-- **Theme**: Dark mode base (#0a0a0a) with warm amber/gold accents (#f59e0b)
-- **Typography**: Playfair Display (display headings) + DM Sans (body/UI)
-- **Components**: shadcn/ui with custom dark theme
+- **Theme**: Light mode with purple-to-blue palette (matching Set List Creator logo)
+- **Typography**: DM Sans (body/UI) + DM Mono (code/numbers)
+- **Components**: shadcn/ui with custom light theme
 
 ## Environment Variables
+
+### .env.local (Next.js)
 - `NEXT_PUBLIC_CONVEX_URL` - Convex deployment URL (required)
-- `CLO_AUTH_TOKEN` - Single auth token for login
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
+- `NEXT_PUBLIC_SITE_URL` - Site URL for Stripe redirects (defaults to https://setlistcreator.co.nz)
+- `STRIPE_SECRET_KEY` - Stripe secret key (server-side)
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret
 - `RESEND_API_KEY` - For email functionality (optional)
+
+### Convex env (set via `npx convex env set`)
+- `SITE_URL` - http://localhost:3000 (dev) / https://setlistcreator.co.nz (prod)
+- `AUTH_GOOGLE_ID` - Google OAuth Client ID
+- `AUTH_GOOGLE_SECRET` - Google OAuth Client Secret
 
 ## Setup Notes
 
 ### First Time Setup
 1. Run `npx convex dev` to initialize Convex and generate types
 2. Copy `.env.example` to `.env.local` and fill in values
-3. Run `npm run dev` in a separate terminal
+3. Set Convex env vars: `npx convex env set SITE_URL http://localhost:3000`
+4. Set Google OAuth: `npx convex env set AUTH_GOOGLE_ID <id>` and `AUTH_GOOGLE_SECRET`
+5. Run `npm run dev` in a separate terminal
 
 ### Build Configuration
 - Uses webpack instead of Turbopack (required for @react-pdf/renderer compatibility)
