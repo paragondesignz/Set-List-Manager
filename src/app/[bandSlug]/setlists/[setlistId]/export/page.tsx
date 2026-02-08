@@ -106,8 +106,8 @@ export default function ExportPage() {
   const songs = isMember ? memberSongs : adminSongs;
 
   const [showArtist, setShowArtist] = useState(true);
-  const [showIntensity, setShowIntensity] = useState(true);
-  const [showEnergy, setShowEnergy] = useState(true);
+  const [showIntensity, setShowIntensity] = useState(false);
+  const [showEnergy, setShowEnergy] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Get chart storage IDs from songs in the setlist
@@ -172,26 +172,28 @@ export default function ExportPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
-          {/* Options */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">PDF Options</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Show artist</span>
-                <Switch checked={showArtist} onCheckedChange={setShowArtist} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Show vocal intensity</span>
-                <Switch checked={showIntensity} onCheckedChange={setShowIntensity} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Show energy level</span>
-                <Switch checked={showEnergy} onCheckedChange={setShowEnergy} />
-              </div>
-            </CardContent>
-          </Card>
+          {/* Options (admin only) */}
+          {!isMember && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">PDF Options</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Show artist</span>
+                  <Switch checked={showArtist} onCheckedChange={setShowArtist} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Show vocal intensity</span>
+                  <Switch checked={showIntensity} onCheckedChange={setShowIntensity} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Show energy level</span>
+                  <Switch checked={showEnergy} onCheckedChange={setShowEnergy} />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Export Options */}
           <div className="grid gap-4 sm:grid-cols-2">

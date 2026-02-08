@@ -301,7 +301,7 @@ export default function SetlistDetailPage() {
               items={items}
               songsById={songsById}
               chartUrls={chartUrls}
-              options={{ showArtist: true, showIntensity: true, showEnergy: true }}
+              options={{ showArtist: true, showIntensity: false, showEnergy: false }}
               fileName={`${setlist.name.replace(/[^a-z0-9]/gi, "-")}-band-pack.zip`}
             />
           </CardContent>
