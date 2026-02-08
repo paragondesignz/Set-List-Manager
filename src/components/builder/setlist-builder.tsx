@@ -1266,10 +1266,111 @@ export function SetlistBuilder({
       onDragCancel={() => setActiveDrag(null)}
       onDragEnd={(ev) => void onDragEnd(ev)}
     >
+      {/* Builder toolbar — full width */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-card border border-border shadow-sm">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-sm">Sets</h3>
+          {lastFlowPreset && (
+            <Badge variant="secondary" className="text-[10px] h-5">
+              {FLOW_PRESETS[lastFlowPreset].name}
+            </Badge>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTemplateDialog(true)}
+          >
+            <FileStack className="h-3.5 w-3.5 mr-1.5" />
+            Template
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleAddSet()}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Add Set
+          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox
+                    id="camelot"
+                    checked={useCamelot}
+                    onCheckedChange={(checked) => setUseCamelot(checked === true)}
+                  />
+                  <label htmlFor="camelot" className="cursor-pointer text-xs text-muted-foreground">
+                    Camelot
+                  </label>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[240px]">
+                Order songs by harmonic compatibility using the Camelot wheel. Songs need a &quot;key&quot; value set to benefit.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                Auto-generate
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                Select Flow Style
+              </div>
+              {(Object.keys(FLOW_PRESETS) as FlowPreset[]).map((preset) => (
+                <DropdownMenuItem
+                  key={preset}
+                  onClick={() => void handleAutoGenerate(preset)}
+                  className="flex flex-col items-start gap-0.5"
+                >
+                  <span className="font-medium">{FLOW_PRESETS[preset].name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {FLOW_PRESETS[preset].description}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleClearAll()}
+          >
+            Clear All
+          </Button>
+        </div>
+      </div>
+
+      {pacingWarnings.size > 0 && (
+        <div className="flex items-center justify-between gap-2 p-2.5 rounded-md bg-orange-50 border border-orange-200 text-sm text-orange-800">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
+            <span>
+              Pacing warning: {pacingWarnings.size} song(s) have 3+ high-intensity songs in a row
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="xs"
+            className="shrink-0 bg-white hover:bg-orange-100 border-orange-300 text-orange-700"
+            onClick={() => void handleFixPacing()}
+          >
+            Fix
+          </Button>
+        </div>
+      )}
+
+      {/* Two-column layout: Available Songs + Sets */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Available Songs - Left column */}
         <div>
-          <div className="lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:flex lg:flex-col bg-card rounded-xl border border-border/60 shadow-sm p-4">
+          <div className="lg:sticky lg:top-[4.5rem] lg:max-h-[calc(100vh-5.5rem)] lg:flex lg:flex-col bg-card rounded-xl border border-border/60 shadow-sm p-4">
             <div className="space-y-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-sm">Available Songs</h3>
@@ -1373,107 +1474,8 @@ export function SetlistBuilder({
           </div>
         </div>
 
-        {/* Sets */}
+        {/* Sets - Right column */}
         <div className="space-y-3 min-w-0 pr-1 pb-1">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-sm">Sets</h3>
-              {lastFlowPreset && (
-                <Badge variant="secondary" className="text-[10px] h-5">
-                  {FLOW_PRESETS[lastFlowPreset].name}
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowTemplateDialog(true)}
-              >
-                <FileStack className="h-3.5 w-3.5 mr-1.5" />
-                Template
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void handleAddSet()}
-              >
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Add Set
-              </Button>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5">
-                      <Checkbox
-                        id="camelot"
-                        checked={useCamelot}
-                        onCheckedChange={(checked) => setUseCamelot(checked === true)}
-                      />
-                      <label htmlFor="camelot" className="cursor-pointer text-xs text-muted-foreground">
-                        Camelot
-                      </label>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[240px]">
-                    Order songs by harmonic compatibility using the Camelot wheel. Songs need a &quot;key&quot; value set to benefit.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Wand2 className="h-3.5 w-3.5 mr-1.5" />
-                    Auto-generate
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                    Select Flow Style
-                  </div>
-                  {(Object.keys(FLOW_PRESETS) as FlowPreset[]).map((preset) => (
-                    <DropdownMenuItem
-                      key={preset}
-                      onClick={() => void handleAutoGenerate(preset)}
-                      className="flex flex-col items-start gap-0.5"
-                    >
-                      <span className="font-medium">{FLOW_PRESETS[preset].name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {FLOW_PRESETS[preset].description}
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void handleClearAll()}
-              >
-                Clear All
-              </Button>
-            </div>
-          </div>
-
-          {pacingWarnings.size > 0 && (
-            <div className="flex items-center justify-between gap-2 p-2.5 rounded-md bg-orange-50 border border-orange-200 text-sm text-orange-800">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
-                <span>
-                  Pacing warning: {pacingWarnings.size} song(s) have 3+ high-intensity songs in a row
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="xs"
-                className="shrink-0 bg-white hover:bg-orange-100 border-orange-300 text-orange-700"
-                onClick={() => void handleFixPacing()}
-              >
-                Fix
-              </Button>
-            </div>
-          )}
-
           <div className="grid gap-3">
             {setsConfig
               .slice()
