@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import {
   convexAuthNextjsMiddleware,
   createRouteMatcher,
@@ -11,6 +12,7 @@ const isPublicRoute = createRouteMatcher([
   "/subscribe",
   "/api/auth/(.*)",
   "/api/stripe/(.*)",
+  "/api/debug-auth",
 ]);
 
 const isAuthPage = createRouteMatcher(["/", "/login"]);
@@ -47,28 +49,27 @@ export default async function middleware(request: any, event: any) {
   const cookieNames = [...request.cookies.getAll()].map((c: any) => c.name);
 
   if (hasCode) {
-    // Single-line JSON log so Vercel doesn't truncate
-    console.log(JSON.stringify({
-      tag: "OAUTH_DEBUG_BEFORE",
+    const debugInfo = {
       host: request.headers.get("host"),
       path: url.pathname,
       cookies: cookieNames,
       hasVerifier: cookieNames.some((n: string) => n.includes("Verifier")),
       hasJWT: cookieNames.some((n: string) => n.includes("JWT")),
-    }));
+    };
+    // Log each field separately so Vercel doesn't truncate
+    console.log("OAUTH_BEFORE host=" + debugInfo.host);
+    console.log("OAUTH_BEFORE cookies=" + cookieNames.join(","));
+    console.log("OAUTH_BEFORE hasVerifier=" + debugInfo.hasVerifier);
+    console.log("OAUTH_BEFORE hasJWT=" + debugInfo.hasJWT);
   }
 
   const response = await authMiddleware(request, event);
 
-  if (hasCode) {
+  if (hasCode && response) {
     const setCookies = response?.headers?.getSetCookie?.() ?? [];
-    console.log(JSON.stringify({
-      tag: "OAUTH_DEBUG_AFTER",
-      status: response?.status,
-      location: response?.headers?.get("location")?.substring(0, 80),
-      setCookieCount: setCookies.length,
-      setCookieNames: setCookies.map((c: string) => c.split("=")[0]),
-    }));
+    console.log("OAUTH_AFTER status=" + response?.status);
+    console.log("OAUTH_AFTER location=" + (response?.headers?.get("location") || "none"));
+    console.log("OAUTH_AFTER setCookies=" + setCookies.map((c: string) => c.split("=")[0]).join(","));
   }
 
   return response;
