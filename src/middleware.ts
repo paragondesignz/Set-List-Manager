@@ -44,7 +44,7 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   if (!authenticated) {
     return nextjsMiddlewareRedirect(request, "/login");
   }
-});
+}, { verbose: true });
 
 export const config = {
   matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
