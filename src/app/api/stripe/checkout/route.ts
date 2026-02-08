@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       },
       customer_email: email || undefined,
       metadata: { userId },
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://setlistcreator.co.nz"}/dashboard?checkout=success`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://setlistcreator.co.nz"}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://setlistcreator.co.nz"}/subscribe`,
     });
 

@@ -135,6 +135,7 @@ function ProfileSection() {
 function SubscriptionSection() {
   const { user, isActive, isTrial, isExpired, daysLeft } = useSubscription();
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   if (user === undefined) return null;
   if (user === null) return null;
@@ -180,6 +181,29 @@ function SubscriptionSection() {
     }
   };
 
+  const handleRefreshStatus = async () => {
+    setRefreshing(true);
+    try {
+      const res = await fetch("/api/stripe/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user._id, email: user.email }),
+      });
+      const data = await res.json();
+      if (data.status === "active") {
+        toast.success("Subscription status updated to active!");
+      } else if (data.status === "none") {
+        toast.info("No active Stripe subscription found for this email.");
+      } else {
+        toast.info(`Subscription status: ${data.status}`);
+      }
+    } catch {
+      toast.error("Failed to refresh subscription status");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const periodEnd = user.currentPeriodEnd
     ? new Date(user.currentPeriodEnd).toLocaleDateString("en-NZ", {
         day: "numeric",
@@ -201,9 +225,21 @@ function SubscriptionSection() {
         </div>
 
         {isTrial && (
-          <p className="text-sm text-muted-foreground">
-            Subscribe now to keep your setlists, songs, and templates when your trial ends.
-          </p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Subscribe now to keep your setlists, songs, and templates when your trial ends.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Already subscribed?{" "}
+              <button
+                onClick={handleRefreshStatus}
+                disabled={refreshing}
+                className="underline underline-offset-2 hover:text-foreground disabled:opacity-50"
+              >
+                {refreshing ? "Checking..." : "Refresh status"}
+              </button>
+            </p>
+          </div>
         )}
 
         {periodEnd && (isActive || status === "canceled") && !isTrial && (

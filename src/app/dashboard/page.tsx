@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useBandsList } from "@/lib/convex";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
@@ -12,15 +12,44 @@ import { UserMenu } from "@/components/layout/user-menu";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const bands = useBandsList();
   const { isLoading, isExpired } = useSubscription();
+  const verifyAttempted = useRef(false);
+
+  // After Stripe checkout, verify subscription status directly
+  useEffect(() => {
+    const sessionId = searchParams.get("session_id");
+    const isCheckoutSuccess = searchParams.get("checkout") === "success";
+    if (isCheckoutSuccess && sessionId && !verifyAttempted.current) {
+      verifyAttempted.current = true;
+      fetch("/api/stripe/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          // Clean up URL params after verification
+          router.replace("/dashboard");
+        })
+        .catch((err) => {
+          console.error("Subscription verification failed:", err);
+          router.replace("/dashboard");
+        });
+    }
+  }, [searchParams, router]);
 
   // Redirect to subscribe if subscription expired
   useEffect(() => {
     if (!isLoading && isExpired) {
-      router.push("/subscribe");
+      // Don't redirect if we're in the middle of verifying checkout
+      const isCheckoutSuccess = searchParams.get("checkout") === "success";
+      if (!isCheckoutSuccess) {
+        router.push("/subscribe");
+      }
     }
-  }, [isLoading, isExpired, router]);
+  }, [isLoading, isExpired, router, searchParams]);
 
   // Auto-redirect to first band if only one
   useEffect(() => {
