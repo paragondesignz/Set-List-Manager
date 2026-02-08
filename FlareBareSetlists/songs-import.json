@@ -1,0 +1,641 @@
+{
+  "songs": [
+    {
+      "title": "On The Sunny Side of the Street",
+      "artist": "Various (Jazz Standard)",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["opener", "jazz"]
+    },
+    {
+      "title": "My Baby Just Cares For Me",
+      "artist": "Nina Simone",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["opener", "jazz"]
+    },
+    {
+      "title": "Love For Sale",
+      "artist": "Cole Porter (Jazz Standard)",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["opener", "jazz"]
+    },
+    {
+      "title": "Peel Me A Grape",
+      "artist": "Diana Krall",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["opener", "jazz"]
+    },
+    {
+      "title": "Afro Blue",
+      "artist": "Mongo Santamaria",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["jazz", "latin"]
+    },
+    {
+      "title": "Smooth Operator",
+      "artist": "Sade",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["soul"]
+    },
+    {
+      "title": "They Can't Take That Away From Me",
+      "artist": "George Gershwin (Jazz Standard)",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz"]
+    },
+    {
+      "title": "All About That Bass",
+      "artist": "Meghan Trainor",
+      "vocalIntensity": 3,
+      "energyLevel": 4,
+      "tags": ["contemporary", "party"]
+    },
+    {
+      "title": "Stronger Than Me",
+      "artist": "Amy Winehouse",
+      "vocalIntensity": 4,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "All That I Can Say",
+      "artist": "Mary J. Blige / Gretchen Parlato",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "Fell In Love With A Boy",
+      "artist": "Joss Stone",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["soul", "party"]
+    },
+    {
+      "title": "I Can't Give You Anything But Love",
+      "artist": "Jazz Standard",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz", "opener"]
+    },
+    {
+      "title": "Ordinary People",
+      "artist": "John Legend",
+      "vocalIntensity": 3,
+      "energyLevel": 2,
+      "tags": ["soul", "ballad"]
+    },
+    {
+      "title": "You Know I'm No Good",
+      "artist": "Amy Winehouse",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "Let's Stay Together",
+      "artist": "Al Green",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "I Can't Help It",
+      "artist": "Michael Jackson",
+      "vocalIntensity": 3,
+      "energyLevel": 2,
+      "tags": ["soul"]
+    },
+    {
+      "title": "Teach Me Tonight",
+      "artist": "Jazz Standard",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz"]
+    },
+    {
+      "title": "How Come You Don't Call",
+      "artist": "Prince / Alicia Keys",
+      "vocalIntensity": 4,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "Feel Like Making Love",
+      "artist": "Roberta Flack",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "Rock With You",
+      "artist": "Michael Jackson",
+      "vocalIntensity": 3,
+      "energyLevel": 4,
+      "tags": ["party", "soul"]
+    },
+    {
+      "title": "Golden",
+      "artist": "Jill Scott",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["soul", "party"]
+    },
+    {
+      "title": "Mas Que Nada",
+      "artist": "Sergio Mendes",
+      "vocalIntensity": 3,
+      "energyLevel": 4,
+      "tags": ["latin", "party"]
+    },
+    {
+      "title": "Moondance",
+      "artist": "Van Morrison",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["jazz", "soul"]
+    },
+    {
+      "title": "Butterfly",
+      "artist": "Herbie Hancock",
+      "vocalIntensity": 2,
+      "energyLevel": 3,
+      "tags": ["jazz"]
+    },
+    {
+      "title": "Mr Magic",
+      "artist": "Amy Winehouse",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "A Long Walk",
+      "artist": "Jill Scott",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "Give Me The Night",
+      "artist": "George Benson",
+      "vocalIntensity": 4,
+      "energyLevel": 5,
+      "tags": ["party", "closer"]
+    },
+    {
+      "title": "Crazy",
+      "artist": "Gnarls Barkley / Cory Henry",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["soul", "party"]
+    },
+    {
+      "title": "Appletree",
+      "artist": "Erykah Badu",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "The Way You Make Me Feel",
+      "artist": "Michael Jackson",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["party", "soul"]
+    },
+    {
+      "title": "Let's Get It On",
+      "artist": "Marvin Gaye",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "At Last",
+      "artist": "Etta James",
+      "vocalIntensity": 4,
+      "energyLevel": 2,
+      "tags": ["ballad", "closer"]
+    },
+    {
+      "title": "Bye Bye Blackbird",
+      "artist": "Jazz Standard",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz", "opener"]
+    },
+    {
+      "title": "Triste",
+      "artist": "Antonio Carlos Jobim",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["latin", "jazz"]
+    },
+    {
+      "title": "September In The Rain",
+      "artist": "Jazz Standard",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz"]
+    },
+    {
+      "title": "Cheek to Cheek",
+      "artist": "Irving Berlin (Jazz Standard)",
+      "vocalIntensity": 2,
+      "energyLevel": 3,
+      "tags": ["jazz"]
+    },
+    {
+      "title": "Turn Me On",
+      "artist": "Norah Jones",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz", "opener"]
+    },
+    {
+      "title": "Lovely Day",
+      "artist": "Bill Withers",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["soul", "party"]
+    },
+    {
+      "title": "Valerie",
+      "artist": "Amy Winehouse / Mark Ronson",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["soul", "party"]
+    },
+    {
+      "title": "Never Too Much",
+      "artist": "Luther Vandross",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["soul", "party"]
+    },
+    {
+      "title": "American Boy",
+      "artist": "Estelle ft. Kanye West",
+      "vocalIntensity": 3,
+      "energyLevel": 4,
+      "tags": ["contemporary", "party"]
+    },
+    {
+      "title": "Say A Little Prayer",
+      "artist": "Aretha Franklin",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["soul", "party"]
+    },
+    {
+      "title": "Wish I Didn't Miss You",
+      "artist": "Angie Stone",
+      "vocalIntensity": 4,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "Make Me Feel",
+      "artist": "Janelle Monae",
+      "vocalIntensity": 4,
+      "energyLevel": 5,
+      "tags": ["party", "contemporary"]
+    },
+    {
+      "title": "Havana",
+      "artist": "Camila Cabello",
+      "vocalIntensity": 3,
+      "energyLevel": 4,
+      "tags": ["latin", "contemporary", "party"]
+    },
+    {
+      "title": "What You Don't Do",
+      "artist": "Lianne La Havas",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul", "contemporary"]
+    },
+    {
+      "title": "Not The Only One",
+      "artist": "Sam Smith",
+      "vocalIntensity": 4,
+      "energyLevel": 2,
+      "tags": ["ballad", "closer", "contemporary"]
+    },
+    {
+      "title": "Skyfall",
+      "artist": "Adele",
+      "vocalIntensity": 5,
+      "energyLevel": 3,
+      "tags": ["ballad"]
+    },
+    {
+      "title": "Doralice",
+      "artist": "Antonio Carlos Jobim",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["latin", "jazz"]
+    },
+    {
+      "title": "Dream A Little Dream",
+      "artist": "Jazz Standard",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz"]
+    },
+    {
+      "title": "Smile",
+      "artist": "Charlie Chaplin / Nat King Cole",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz", "ballad"]
+    },
+    {
+      "title": "Frontin'",
+      "artist": "Pharrell / Jamie Cullum",
+      "vocalIntensity": 3,
+      "energyLevel": 4,
+      "tags": ["contemporary", "party"]
+    },
+    {
+      "title": "If I Ain't Got You",
+      "artist": "Alicia Keys",
+      "vocalIntensity": 4,
+      "energyLevel": 3,
+      "tags": ["soul", "ballad"]
+    },
+    {
+      "title": "What's Love Got To Do With It",
+      "artist": "Tina Turner",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["soul", "party"]
+    },
+    {
+      "title": "Tightrope",
+      "artist": "Janelle Monae",
+      "vocalIntensity": 4,
+      "energyLevel": 5,
+      "tags": ["party", "contemporary"]
+    },
+    {
+      "title": "That Man",
+      "artist": "Caro Emerald",
+      "vocalIntensity": 3,
+      "energyLevel": 4,
+      "tags": ["jazz", "party"]
+    },
+    {
+      "title": "Feel It Still",
+      "artist": "Portugal. The Man / PMJ",
+      "vocalIntensity": 3,
+      "energyLevel": 4,
+      "tags": ["contemporary", "party"]
+    },
+    {
+      "title": "Who Will Comfort Me",
+      "artist": "Melody Gardot",
+      "vocalIntensity": 3,
+      "energyLevel": 2,
+      "tags": ["jazz", "ballad"]
+    },
+    {
+      "title": "Night and Day",
+      "artist": "Cole Porter (Jazz Standard)",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz"]
+    },
+    {
+      "title": "Wave",
+      "artist": "Antonio Carlos Jobim",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["latin", "jazz"]
+    },
+    {
+      "title": "C'est Si Bon",
+      "artist": "French Jazz Standard",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz"]
+    },
+    {
+      "title": "One Note Samba",
+      "artist": "Antonio Carlos Jobim",
+      "vocalIntensity": 2,
+      "energyLevel": 3,
+      "tags": ["latin", "jazz"]
+    },
+    {
+      "title": "Just The Two Of Us",
+      "artist": "Bill Withers / Grover Washington Jr",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "How Deep Is Your Love",
+      "artist": "Bee Gees / PJ Morton",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul", "contemporary"]
+    },
+    {
+      "title": "La Vie En Rose",
+      "artist": "Edith Piaf",
+      "vocalIntensity": 3,
+      "energyLevel": 2,
+      "tags": ["ballad", "closer"]
+    },
+    {
+      "title": "Little Boat",
+      "artist": "Antonio Carlos Jobim",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["latin", "jazz", "opener"]
+    },
+    {
+      "title": "What's Going On",
+      "artist": "Marvin Gaye",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["soul"]
+    },
+    {
+      "title": "Ain't Nobody",
+      "artist": "Chaka Khan",
+      "vocalIntensity": 5,
+      "energyLevel": 5,
+      "tags": ["party", "soul"]
+    },
+    {
+      "title": "All Night Long",
+      "artist": "Lionel Richie",
+      "vocalIntensity": 4,
+      "energyLevel": 5,
+      "tags": ["party", "closer"]
+    },
+    {
+      "title": "Feeling Good",
+      "artist": "Nina Simone",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["jazz", "soul"]
+    },
+    {
+      "title": "Hypotheticals",
+      "artist": "Lake Street Dive",
+      "vocalIntensity": 3,
+      "energyLevel": 4,
+      "tags": ["contemporary", "soul"]
+    },
+    {
+      "title": "You're Getting To Be A Habit With Me",
+      "artist": "Jazz Standard",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz"]
+    },
+    {
+      "title": "Moody's Mood For Love",
+      "artist": "King Pleasure / James Moody",
+      "vocalIntensity": 3,
+      "energyLevel": 2,
+      "tags": ["jazz"]
+    },
+    {
+      "title": "Taking A Chance On Love",
+      "artist": "Jazz Standard",
+      "vocalIntensity": 2,
+      "energyLevel": 3,
+      "tags": ["jazz"]
+    },
+    {
+      "title": "Love Is A Losing Game",
+      "artist": "Amy Winehouse",
+      "vocalIntensity": 4,
+      "energyLevel": 2,
+      "tags": ["ballad", "soul"]
+    },
+    {
+      "title": "Tell Me Something Good",
+      "artist": "Rufus ft. Chaka Khan",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["soul", "party"]
+    },
+    {
+      "title": "I Know You, I Live You",
+      "artist": "Chaka Khan",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["soul", "party"]
+    },
+    {
+      "title": "Body & Soul",
+      "artist": "Jazz Standard",
+      "vocalIntensity": 3,
+      "energyLevel": 2,
+      "tags": ["jazz", "opener"]
+    },
+    {
+      "title": "After Hours",
+      "artist": "Jazz Standard",
+      "vocalIntensity": 2,
+      "energyLevel": 2,
+      "tags": ["jazz", "opener"]
+    },
+    {
+      "title": "Bright Sized Life",
+      "artist": "Pat Metheny",
+      "vocalIntensity": 1,
+      "energyLevel": 3,
+      "tags": ["jazz", "opener"]
+    },
+    {
+      "title": "I Can't Make You Love Me",
+      "artist": "Bonnie Raitt",
+      "vocalIntensity": 4,
+      "energyLevel": 2,
+      "tags": ["ballad"]
+    },
+    {
+      "title": "Give Me One Reason",
+      "artist": "Tracy Chapman / Scary Pockets",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["soul", "party"]
+    },
+    {
+      "title": "I Will Survive",
+      "artist": "Gloria Gaynor / Scary Pockets",
+      "vocalIntensity": 5,
+      "energyLevel": 5,
+      "tags": ["party"]
+    },
+    {
+      "title": "Staying Alive",
+      "artist": "Bee Gees / Scary Pockets",
+      "vocalIntensity": 4,
+      "energyLevel": 5,
+      "tags": ["party"]
+    },
+    {
+      "title": "Cosmic Girl",
+      "artist": "Jamiroquai",
+      "vocalIntensity": 4,
+      "energyLevel": 5,
+      "tags": ["party"]
+    },
+    {
+      "title": "Treasure",
+      "artist": "Bruno Mars",
+      "vocalIntensity": 4,
+      "energyLevel": 5,
+      "tags": ["party", "contemporary"]
+    },
+    {
+      "title": "Flowers",
+      "artist": "Miley Cyrus",
+      "vocalIntensity": 3,
+      "energyLevel": 4,
+      "tags": ["party", "contemporary"]
+    },
+    {
+      "title": "Lovefool",
+      "artist": "The Cardigans / Pomplamoose",
+      "vocalIntensity": 3,
+      "energyLevel": 4,
+      "tags": ["contemporary", "party"]
+    },
+    {
+      "title": "Worth It",
+      "artist": "Raye",
+      "vocalIntensity": 4,
+      "energyLevel": 4,
+      "tags": ["contemporary", "party"]
+    },
+    {
+      "title": "It's So Easy",
+      "artist": "Olivia Dean",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["contemporary", "soul"]
+    },
+    {
+      "title": "Man I Need",
+      "artist": "Olivia Dean",
+      "vocalIntensity": 3,
+      "energyLevel": 3,
+      "tags": ["contemporary", "soul"]
+    }
+  ]
+}
