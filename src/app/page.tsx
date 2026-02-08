@@ -82,16 +82,13 @@ export default function LandingPage() {
         <div className="relative max-w-5xl mx-auto px-6 pt-20 pb-24 text-center">
           <div className="flex justify-center mb-6">
             <Image
-              src="/set-list-creator-logo-trans.png"
+              src="/logo.png"
               alt="Set List Creator"
-              width={96}
-              height={96}
+              width={280}
+              height={80}
               priority
             />
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4 brand-gradient-text">
-            Set List Creator
-          </h1>
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
             The professional setlist builder for cover bands. Organise your song library, generate smart setlists, and share polished PDFs — all in one place.
           </p>
@@ -235,14 +232,13 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-border py-8 px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
             <Image
-              src="/set-list-creator-logo-trans.png"
+              src="/logo.png"
               alt="Set List Creator"
-              width={20}
-              height={20}
+              width={100}
+              height={28}
             />
-            <span>Set List Creator</span>
           </div>
           <p>&copy; {new Date().getFullYear()} Set List Creator</p>
         </div>

@@ -77,11 +77,8 @@ export default function LoginPage() {
       <div className="w-full max-w-sm animate-fade-in">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Image src="/set-list-creator-logo-trans.png" alt="Set List Creator" width={64} height={64} />
+            <Image src="/logo.png" alt="Set List Creator" width={200} height={56} />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">
-            Set List Creator
-          </h1>
           <p className="text-muted-foreground text-sm">
             Professional setlist creation
           </p>

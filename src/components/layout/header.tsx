@@ -47,7 +47,7 @@ export function Header({ band, bands }: HeaderProps) {
             href="/dashboard"
             className="flex items-center"
           >
-            <Image src="/set-list-creator-logo-trans.png" alt="Set List Creator" width={28} height={28} />
+            <Image src="/logo.png" alt="Set List Creator" width={120} height={32} />
           </Link>
 
           {band && (

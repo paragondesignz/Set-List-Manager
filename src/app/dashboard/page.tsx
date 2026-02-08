@@ -58,7 +58,7 @@ export default function DashboardPage() {
         <header className="sticky top-0 z-50 border-b border-border bg-background">
           <div className="container mx-auto px-4 h-12 flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center">
-              <Image src="/set-list-creator-logo-trans.png" alt="Set List Creator" width={28} height={28} />
+              <Image src="/logo.png" alt="Set List Creator" width={120} height={32} />
             </Link>
             <Button variant="ghost" size="icon-sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
               <LogOut className="h-4 w-4" />

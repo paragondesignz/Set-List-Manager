@@ -69,7 +69,7 @@ export default function SubscribePage() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md text-center animate-fade-in">
           <div className="flex justify-center mb-4">
-            <Image src="/set-list-creator-logo-trans.png" alt="Set List Creator" width={64} height={64} />
+            <Image src="/logo.png" alt="Set List Creator" width={200} height={56} />
           </div>
           <h1 className="text-2xl font-bold tracking-tight mb-2">
             You&apos;re subscribed!
@@ -95,7 +95,7 @@ export default function SubscribePage() {
       <div className="w-full max-w-lg animate-fade-in">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Image src="/set-list-creator-logo-trans.png" alt="Set List Creator" width={64} height={64} />
+            <Image src="/logo.png" alt="Set List Creator" width={200} height={56} />
           </div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">
             {isTrial ? "Your trial has ended" : "Subscribe to continue"}
