@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import {
   convexAuthNextjsMiddleware,
   createRouteMatcher,
@@ -46,33 +45,39 @@ const authMiddleware = convexAuthNextjsMiddleware(async (request, { convexAuth }
 export default async function middleware(request: any, event: any) {
   const url = new URL(request.url);
   const hasCode = url.searchParams.has("code");
-  const cookieNames = [...request.cookies.getAll()].map((c: any) => c.name);
 
   if (hasCode) {
-    const debugInfo = {
-      host: request.headers.get("host"),
-      path: url.pathname,
-      cookies: cookieNames,
-      hasVerifier: cookieNames.some((n: string) => n.includes("Verifier")),
-      hasJWT: cookieNames.some((n: string) => n.includes("JWT")),
+    // Capture console.error output from the library
+    const errors: string[] = [];
+    const origError = console.error;
+    console.error = (...args: any[]) => {
+      const msg = args.map((a: any) => {
+        if (a instanceof Error) return a.message + " | " + a.stack?.substring(0, 300);
+        if (typeof a === "string") return a;
+        try { return JSON.stringify(a)?.substring(0, 300); } catch { return String(a); }
+      }).join(" ");
+      errors.push(msg);
+      origError(...args);
     };
-    // Log each field separately so Vercel doesn't truncate
-    console.log("OAUTH_BEFORE host=" + debugInfo.host);
-    console.log("OAUTH_BEFORE cookies=" + cookieNames.join(","));
-    console.log("OAUTH_BEFORE hasVerifier=" + debugInfo.hasVerifier);
-    console.log("OAUTH_BEFORE hasJWT=" + debugInfo.hasJWT);
+
+    const response = await authMiddleware(request, event);
+
+    // Restore console.error
+    console.error = origError;
+
+    // Log captured errors
+    if (errors.length > 0) {
+      for (const err of errors) {
+        console.log("CAPTURED_AUTH_ERROR: " + err.substring(0, 200));
+      }
+    } else {
+      console.log("OAUTH_CODE_EXCHANGE: no errors captured");
+    }
+
+    return response;
   }
 
-  const response = await authMiddleware(request, event);
-
-  if (hasCode && response) {
-    const setCookies = response?.headers?.getSetCookie?.() ?? [];
-    console.log("OAUTH_AFTER status=" + response?.status);
-    console.log("OAUTH_AFTER location=" + (response?.headers?.get("location") || "none"));
-    console.log("OAUTH_AFTER setCookies=" + setCookies.map((c: string) => c.split("=")[0]).join(","));
-  }
-
-  return response;
+  return authMiddleware(request, event);
 }
 
 export const config = {
