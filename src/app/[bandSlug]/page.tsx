@@ -44,47 +44,53 @@ export default function BandDashboardPage() {
 
       {/* Quick Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="hover-lift">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Songs
-            </CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Music className="h-4 w-4 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalSongs}</div>
-          </CardContent>
-        </Card>
+        <Link href={`/${bandSlug}/songs`}>
+          <Card className="hover-lift cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Songs
+              </CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Music className="h-4 w-4 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalSongs}</div>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="hover-lift">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Setlists
-            </CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <ListMusic className="h-4 w-4 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{setlists?.length ?? 0}</div>
-          </CardContent>
-        </Card>
+        <Link href={`/${bandSlug}/setlists`}>
+          <Card className="hover-lift cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Setlists
+              </CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <ListMusic className="h-4 w-4 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{setlists?.length ?? 0}</div>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="hover-lift">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Drafts
-            </CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Calendar className="h-4 w-4 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{draftCount}</div>
-          </CardContent>
-        </Card>
+        <Link href={`/${bandSlug}/setlists?status=draft`}>
+          <Card className="hover-lift cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Drafts
+              </CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{draftCount}</div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Quick Actions */}

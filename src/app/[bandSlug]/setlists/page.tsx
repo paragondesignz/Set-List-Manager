@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   useBandBySlug,
@@ -45,10 +45,14 @@ const PAGE_SIZE = 25;
 
 export default function SetlistsPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const bandSlug = params.bandSlug as string;
   const band = useBandBySlug(bandSlug);
 
-  const [tab, setTab] = useState<"draft" | "finalised" | "all">("all");
+  // Read initial tab from URL param if present
+  const statusParam = searchParams.get("status");
+  const initialTab = statusParam === "draft" || statusParam === "finalised" ? statusParam : "all";
+  const [tab, setTab] = useState<"draft" | "finalised" | "all">(initialTab);
   const [page, setPage] = useState(0);
 
   const setlists = useSetlistsList(

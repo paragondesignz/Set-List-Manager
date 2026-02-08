@@ -66,6 +66,7 @@ export const create = mutation({
     artist: v.string(),
     vocalIntensity: v.number(),
     energyLevel: v.number(),
+    key: v.optional(v.string()),
     tags: tagValues,
     notes: v.optional(v.string()),
     chartFileId: v.optional(v.id("_storage")),
@@ -109,6 +110,7 @@ export const create = mutation({
       artist: args.artist.trim(),
       vocalIntensity: Math.min(5, Math.max(1, args.vocalIntensity)),
       energyLevel: Math.min(5, Math.max(1, args.energyLevel)),
+      key: args.key?.trim() || undefined,
       tags: args.tags,
       notes: args.notes,
       chartFileId: args.chartFileId,
@@ -130,6 +132,7 @@ export const update = mutation({
       artist: v.optional(v.string()),
       vocalIntensity: v.optional(v.number()),
       energyLevel: v.optional(v.number()),
+      key: v.optional(v.string()),
       tags: v.optional(tagValues),
       notes: v.optional(v.string()),
       chartFileId: v.optional(v.id("_storage")),
@@ -186,6 +189,7 @@ export const update = mutation({
     if (args.patch.energyLevel !== undefined) {
       update.energyLevel = Math.min(5, Math.max(1, args.patch.energyLevel));
     }
+    if (args.patch.key !== undefined) update.key = args.patch.key?.trim() || undefined;
     if (args.patch.tags !== undefined) update.tags = args.patch.tags;
     if (args.patch.notes !== undefined) update.notes = args.patch.notes;
     if (args.patch.chartFileId !== undefined) update.chartFileId = args.patch.chartFileId;

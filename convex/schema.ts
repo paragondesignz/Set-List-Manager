@@ -24,6 +24,7 @@ export default defineSchema({
     artist: v.string(),
     vocalIntensity: v.number(), // 1-5
     energyLevel: v.number(), // 1-5
+    key: v.optional(v.string()), // Musical key (e.g., "Am", "C", "F#m") for Camelot mixing
     tags: v.array(v.string()), // ["opener", "closer", "ballad", etc.]
     notes: v.optional(v.string()),
     chartFileId: v.optional(v.id("_storage")), // PDF/image

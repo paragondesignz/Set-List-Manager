@@ -8,6 +8,7 @@
  * - Pinned songs: Respect user-locked positions
  * - Excluded songs: Skip songs marked as excluded
  * - Tags: Respect opener/closer tags for first/last positions
+ * - Camelot: Optional harmonic key mixing for smooth transitions
  */
 
 export type Song = {
@@ -16,10 +17,77 @@ export type Song = {
   artist: string;
   vocalIntensity: number; // 1-5
   energyLevel: number; // 1-5
+  key?: string; // Musical key for Camelot mixing
   tags: string[];
   playCount: number;
   lastPlayedAt?: number;
 };
+
+// Camelot Wheel mapping: musical keys to Camelot codes
+// Minor keys are "A" (inner wheel), Major keys are "B" (outer wheel)
+const KEY_TO_CAMELOT: Record<string, string> = {
+  // Minor keys (A wheel)
+  "Am": "1A", "A minor": "1A",
+  "Em": "2A", "E minor": "2A",
+  "Bm": "3A", "B minor": "3A",
+  "F#m": "4A", "F# minor": "4A", "Gbm": "4A", "Gb minor": "4A",
+  "C#m": "5A", "C# minor": "5A", "Dbm": "5A", "Db minor": "5A",
+  "G#m": "6A", "G# minor": "6A", "Abm": "6A", "Ab minor": "6A",
+  "D#m": "7A", "D# minor": "7A", "Ebm": "7A", "Eb minor": "7A",
+  "A#m": "8A", "A# minor": "8A", "Bbm": "8A", "Bb minor": "8A",
+  "Fm": "9A", "F minor": "9A",
+  "Cm": "10A", "C minor": "10A",
+  "Gm": "11A", "G minor": "11A",
+  "Dm": "12A", "D minor": "12A",
+  // Major keys (B wheel)
+  "C": "1B", "C major": "1B",
+  "G": "2B", "G major": "2B",
+  "D": "3B", "D major": "3B",
+  "A": "4B", "A major": "4B",
+  "E": "5B", "E major": "5B",
+  "B": "6B", "B major": "6B", "Cb": "6B", "Cb major": "6B",
+  "F#": "7B", "F# major": "7B", "Gb": "7B", "Gb major": "7B",
+  "C#": "8B", "C# major": "8B", "Db": "8B", "Db major": "8B",
+  "G#": "9B", "G# major": "9B", "Ab": "9B", "Ab major": "9B",
+  "D#": "10B", "D# major": "10B", "Eb": "10B", "Eb major": "10B",
+  "A#": "11B", "A# major": "11B", "Bb": "11B", "Bb major": "11B",
+  "F": "12B", "F major": "12B",
+};
+
+export function keyToCamelot(key: string | undefined): string | null {
+  if (!key) return null;
+  const normalized = key.trim();
+  // Try exact match first
+  if (KEY_TO_CAMELOT[normalized]) return KEY_TO_CAMELOT[normalized];
+  // Try case-insensitive match
+  const lower = normalized.toLowerCase();
+  for (const [k, v] of Object.entries(KEY_TO_CAMELOT)) {
+    if (k.toLowerCase() === lower) return v;
+  }
+  // Check if already in Camelot format (e.g., "1A", "12B")
+  if (/^(1[0-2]|[1-9])[AB]$/i.test(normalized)) {
+    return normalized.toUpperCase();
+  }
+  return null;
+}
+
+export function areCamelotCompatible(code1: string | null, code2: string | null): boolean {
+  if (!code1 || !code2) return false;
+  const num1 = parseInt(code1.slice(0, -1), 10);
+  const letter1 = code1.slice(-1);
+  const num2 = parseInt(code2.slice(0, -1), 10);
+  const letter2 = code2.slice(-1);
+  // Same position = perfect match
+  if (num1 === num2 && letter1 === letter2) return true;
+  // Same number, different letter (A/B switch) = relative major/minor
+  if (num1 === num2 && letter1 !== letter2) return true;
+  // +/- 1 hour with same letter (wraps 12 to 1)
+  if (letter1 === letter2) {
+    const diff = Math.abs(num1 - num2);
+    if (diff === 1 || diff === 11) return true;
+  }
+  return false;
+}
 
 export type SetConfig = {
   setIndex: number;
@@ -46,6 +114,7 @@ export type GenerationOptions = {
   pinnedSlots: PinnedSlot[];
   excludedSongIds: string[];
   flowPreset?: FlowPreset;
+  useCamelot?: boolean; // Order songs by harmonic key compatibility
 };
 
 export type GeneratedSetlist = {
@@ -251,7 +320,8 @@ function scoreSongForPosition(
   totalSets: number,
   previousSongs: Song[],
   now: number,
-  preset: FlowPreset
+  preset: FlowPreset,
+  useCamelot: boolean = false
 ): number {
   const positionRatio = totalPositions > 1 ? position / (totalPositions - 1) : 0;
   const isFirstPosition = position === 0;
@@ -309,6 +379,20 @@ function scoreSongForPosition(
     score += 15;
   }
 
+  // Camelot compatibility bonus (0-25 points)
+  if (useCamelot && previousSongs.length > 0) {
+    const lastSong = previousSongs[previousSongs.length - 1];
+    const lastCamelot = keyToCamelot(lastSong?.key);
+    const songCamelot = keyToCamelot(song.key);
+    if (areCamelotCompatible(lastCamelot, songCamelot)) {
+      score += 25; // Strong bonus for harmonic compatibility
+    } else if (songCamelot && lastCamelot) {
+      // Both have keys but not compatible - small penalty
+      score -= 5;
+    }
+    // No penalty if either song lacks a key
+  }
+
   // Freshness bonus (0-20 points)
   const freshnessScore = getFreshnessScore(song, now);
   score += Math.min(20, freshnessScore / 5);
@@ -334,7 +418,7 @@ function checkPacingViolations(songs: Song[]): string[] {
 
 // Main generation function
 export function generateSetlist(options: GenerationOptions): GeneratedSetlist {
-  const { songs, setsConfig, pinnedSlots, excludedSongIds, flowPreset = "classic" } = options;
+  const { songs, setsConfig, pinnedSlots, excludedSongIds, flowPreset = "classic", useCamelot = false } = options;
   const now = Date.now();
 
   const result: GeneratedSetlist = {
@@ -407,7 +491,8 @@ export function generateSetlist(options: GenerationOptions): GeneratedSetlist {
           totalSets,
           previousSongs,
           now,
-          flowPreset
+          flowPreset,
+          useCamelot
         )
       }));
 

@@ -19,6 +19,7 @@ export default function NewSongPage() {
     artist: string;
     vocalIntensity: number;
     energyLevel: number;
+    key?: string;
     notes?: string;
     chartFileId?: string;
     youtubeUrl?: string;
@@ -30,6 +31,7 @@ export default function NewSongPage() {
         artist: data.artist,
         vocalIntensity: data.vocalIntensity,
         energyLevel: data.energyLevel,
+        key: data.key,
         notes: data.notes,
         chartFileId: data.chartFileId as any,
         youtubeUrl: data.youtubeUrl

@@ -39,8 +39,10 @@ import {
   type FlowPreset
 } from "@/lib/generation-algorithm";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -91,6 +93,7 @@ type Song = {
   artist: string;
   vocalIntensity: number;
   energyLevel: number;
+  key?: string; // Musical key for Camelot mixing
   tags: string[];
   playCount: number;
   lastPlayedAt?: number;
@@ -508,6 +511,8 @@ export function SetlistBuilder({
   const [energyFilter, setEnergyFilter] = React.useState<number | null>(null);
   const [sortField, setSortField] = React.useState<SortField>("title");
   const [sortDir, setSortDir] = React.useState<SortDir>("asc");
+  const [useCamelot, setUseCamelot] = React.useState(false); // Harmonic key ordering
+  const [lastFlowPreset, setLastFlowPreset] = React.useState<FlowPreset | null>(null);
 
   const addSong = useAddSetlistSong();
   const moveItem = useMoveSetlistItem();
@@ -706,6 +711,67 @@ export function SetlistBuilder({
     }
   };
 
+  const handleFixPacing = async () => {
+    if (pacingWarnings.size === 0) return;
+
+    // Get available songs with vocal intensity <= 3 (breaks the high-intensity streak)
+    const availableReplacements = songs.filter(
+      (s) => !usedSongIds.has(s._id) && s.vocalIntensity <= 3
+    );
+
+    if (availableReplacements.length === 0) {
+      toast.error("No medium/low-intensity songs available", {
+        description: "Add more songs with vocal intensity 1-3 to fix pacing."
+      });
+      return;
+    }
+
+    let fixedCount = 0;
+    const usedReplacements = new Set<string>();
+
+    // Process each warning item
+    for (const itemId of pacingWarnings) {
+      const item = items.find((i) => i._id === itemId);
+      if (!item) continue;
+
+      const currentSong = songsById.get(item.songId);
+      if (!currentSong) continue;
+
+      // Find best replacement: prioritize matching energy level, then prefer vocal intensity 3
+      // This maintains the set's energy flow while giving the voice a break
+      const candidates = availableReplacements
+        .filter((s) => !usedReplacements.has(s._id))
+        .map((s) => ({
+          song: s,
+          // Score: prefer same energy, then prefer vocal intensity 3 (medium, not jarring)
+          score:
+            (s.energyLevel === currentSong.energyLevel ? 10 : -Math.abs(s.energyLevel - currentSong.energyLevel)) +
+            (s.vocalIntensity === 3 ? 5 : 0) // Prefer intensity 3 - it's a subtle break
+        }))
+        .sort((a, b) => b.score - a.score);
+
+      if (candidates.length === 0) break;
+
+      const replacement = candidates[0].song;
+      try {
+        await swapSong({
+          itemId: itemId as any,
+          newSongId: replacement._id as any
+        });
+        usedReplacements.add(replacement._id);
+        fixedCount++;
+      } catch {
+        // Continue trying other items
+      }
+    }
+
+    if (fixedCount > 0) {
+      toast.success(`Fixed ${fixedCount} pacing issue${fixedCount > 1 ? "s" : ""}`);
+    } else {
+      toast.error("Could not fix pacing issues");
+    }
+  };
+
   const handleClearSet = async (setIndex: number) => {
     try {
       await clearSet({ setlistId: setlistId as any, setIndex });
@@ -718,6 +784,7 @@ export function SetlistBuilder({
   const handleClearAll = async () => {
     try {
       await clearAll({ setlistId: setlistId as any });
+      setLastFlowPreset(null);
       toast.success("All sets cleared");
     } catch (e: any) {
       toast.error("Failed to clear", { description: e?.message });
@@ -736,6 +803,7 @@ export function SetlistBuilder({
         artist: s.artist,
         vocalIntensity: s.vocalIntensity,
         energyLevel: s.energyLevel,
+        key: s.key, // Include key for Camelot mixing
         tags: s.tags ?? [],
         playCount: s.playCount,
         lastPlayedAt: s.lastPlayedAt
@@ -743,7 +811,8 @@ export function SetlistBuilder({
       setsConfig,
       pinnedSlots: [],
       excludedSongIds: [],
-      flowPreset
+      flowPreset,
+      useCamelot
     });
 
     // Add songs
@@ -761,6 +830,7 @@ export function SetlistBuilder({
       }
     }
 
+    setLastFlowPreset(flowPreset);
     const presetName = FLOW_PRESETS[flowPreset].name;
     if (result.warnings.length > 0) {
       toast.warning(`Generated with ${presetName}`, {
@@ -966,8 +1036,34 @@ export function SetlistBuilder({
         {/* Sets */}
         <div className="space-y-3 min-w-0 pr-1 pb-1">
           <div className="flex items-center justify-between gap-4">
-            <h3 className="font-semibold text-sm">Sets</h3>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-sm">Sets</h3>
+              {lastFlowPreset && (
+                <Badge variant="secondary" className="text-[10px] h-5">
+                  {FLOW_PRESETS[lastFlowPreset].name}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1.5">
+                      <Checkbox
+                        id="camelot"
+                        checked={useCamelot}
+                        onCheckedChange={(checked) => setUseCamelot(checked === true)}
+                      />
+                      <label htmlFor="camelot" className="cursor-pointer text-xs text-muted-foreground">
+                        Camelot
+                      </label>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[240px]">
+                    Order songs by harmonic compatibility using the Camelot wheel. Songs need a &quot;key&quot; value set to benefit.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -1004,11 +1100,21 @@ export function SetlistBuilder({
           </div>
 
           {pacingWarnings.size > 0 && (
-            <div className="flex items-center gap-2 p-2.5 rounded-md bg-orange-50 border border-orange-200 text-sm text-orange-800">
-              <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
-              <span>
-                Pacing warning: {pacingWarnings.size} song(s) have 3+ high-intensity songs in a row
-              </span>
+            <div className="flex items-center justify-between gap-2 p-2.5 rounded-md bg-orange-50 border border-orange-200 text-sm text-orange-800">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
+                <span>
+                  Pacing warning: {pacingWarnings.size} song(s) have 3+ high-intensity songs in a row
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="xs"
+                className="shrink-0 bg-white hover:bg-orange-100 border-orange-300 text-orange-700"
+                onClick={() => void handleFixPacing()}
+              >
+                Fix
+              </Button>
             </div>
           )}
 

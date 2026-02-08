@@ -19,6 +19,7 @@ type SongFormData = {
   artist: string;
   vocalIntensity: number;
   energyLevel: number;
+  key?: string;
   notes?: string;
   chartFileId?: string;
   youtubeUrl?: string;
@@ -69,7 +70,7 @@ function YouTubeEmbed({ url }: { url: string }) {
   }
 
   return (
-    <div className="aspect-video rounded-lg overflow-hidden border border-border bg-black">
+    <div className="aspect-video w-full rounded-lg overflow-hidden border border-border bg-black">
       <iframe
         src={`https://www.youtube.com/embed/${videoId}`}
         title="YouTube video"
@@ -96,21 +97,21 @@ function PDFViewer({ fileId }: { fileId: string }) {
   const isPDF = fileUrl.includes('.pdf') || !fileUrl.match(/\.(jpg|jpeg|png|webp|gif)$/i);
 
   if (!isPDF) {
-    // It's an image - show it directly
+    // It's an image - show it at full container width
     return (
       <div className="space-y-2">
-        <div className="rounded-lg border border-border overflow-hidden bg-white">
+        <div className="w-full rounded-lg border border-border overflow-hidden bg-white">
           <img
             src={fileUrl}
             alt="Song chart"
-            className="w-full h-auto max-h-[600px] object-contain"
+            className="w-full h-auto"
           />
         </div>
         <div className="flex justify-end">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="xs" asChild>
             <a href={fileUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-              Open Full Size
+              <ExternalLink className="h-3 w-3 mr-1" />
+              Open
             </a>
           </Button>
         </div>
@@ -118,10 +119,10 @@ function PDFViewer({ fileId }: { fileId: string }) {
     );
   }
 
-  // It's a PDF - embed it
+  // It's a PDF - embed it at full container width with A4 aspect ratio
   return (
     <div className="space-y-2">
-      <div className="rounded-lg border border-border overflow-hidden bg-white" style={{ height: '500px' }}>
+      <div className="w-full rounded-lg border border-border overflow-hidden bg-white" style={{ aspectRatio: '1 / 1.414' }}>
         <iframe
           src={`${fileUrl}#view=FitH`}
           title="Chart PDF"
@@ -129,10 +130,10 @@ function PDFViewer({ fileId }: { fileId: string }) {
         />
       </div>
       <div className="flex justify-end">
-        <Button variant="outline" size="sm" asChild>
+        <Button variant="outline" size="xs" asChild>
           <a href={fileUrl} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-            Open in New Tab
+            <ExternalLink className="h-3 w-3 mr-1" />
+            Open
           </a>
         </Button>
       </div>
@@ -149,6 +150,7 @@ export function SongForm({ initialData, onSubmit, cancelHref }: SongFormProps) {
   const [energyLevel, setEnergyLevel] = useState(
     initialData?.energyLevel ?? 3
   );
+  const [key, setKey] = useState(initialData?.key ?? "");
   const [notes, setNotes] = useState(initialData?.notes ?? "");
   const [chartFileId, setChartFileId] = useState<string | undefined>(
     initialData?.chartFileId
@@ -167,6 +169,7 @@ export function SongForm({ initialData, onSubmit, cancelHref }: SongFormProps) {
         artist: artist.trim(),
         vocalIntensity,
         energyLevel,
+        key: key.trim() || undefined,
         notes: notes.trim() || undefined,
         chartFileId,
         youtubeUrl: youtubeUrl.trim() || undefined
@@ -243,32 +246,51 @@ export function SongForm({ initialData, onSubmit, cancelHref }: SongFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label2 htmlFor="youtube">YouTube URL</Label2>
-        <Input
-          id="youtube"
-          placeholder="https://youtube.com/watch?v=..."
-          value={youtubeUrl}
-          onChange={(e) => setYoutubeUrl(e.target.value)}
-        />
-        {youtubeUrl && getYouTubeVideoId(youtubeUrl) && (
-          <div className="mt-3">
-            <YouTubeEmbed url={youtubeUrl} />
-          </div>
-        )}
+        <Label2 htmlFor="key">Key</Label2>
+        <div>
+          <Input
+            id="key"
+            placeholder="e.g., Am, C, F#m, Bb"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            className="max-w-[200px]"
+          />
+          <p className="text-xs text-muted-foreground mt-1.5">
+            Musical key for Camelot wheel mixing (optional)
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label2>Chart (PDF or Image)</Label2>
-        <ChartUpload
-          currentFileId={chartFileId}
-          onUpload={setChartFileId}
-          onRemove={() => setChartFileId(undefined)}
-        />
-        {chartFileId && (
-          <div className="mt-3">
-            <PDFViewer fileId={chartFileId} />
-          </div>
-        )}
+      {/* YouTube and Chart in 2-column responsive layout */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="space-y-2">
+          <Label2 htmlFor="youtube">YouTube URL</Label2>
+          <Input
+            id="youtube"
+            placeholder="https://youtube.com/watch?v=..."
+            value={youtubeUrl}
+            onChange={(e) => setYoutubeUrl(e.target.value)}
+          />
+          {youtubeUrl && getYouTubeVideoId(youtubeUrl) && (
+            <div className="mt-3">
+              <YouTubeEmbed url={youtubeUrl} />
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label2>Chart (PDF or Image)</Label2>
+          <ChartUpload
+            currentFileId={chartFileId}
+            onUpload={setChartFileId}
+            onRemove={() => setChartFileId(undefined)}
+          />
+          {chartFileId && (
+            <div className="mt-3">
+              <PDFViewer fileId={chartFileId} />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="space-y-1.5">
