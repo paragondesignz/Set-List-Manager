@@ -72,17 +72,29 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
       return nextjsMiddlewareRedirect(request, "/member-login");
     }
 
-    // Members can only access their band's routes (read-only)
-    const allowedPrefixes = [`/${parsed.bandSlug}`];
-    const isAllowed = allowedPrefixes.some((prefix) =>
-      pathname.startsWith(prefix)
-    );
+    // Members can only access specific read-only routes for their band
+    const bandPrefix = `/${parsed.bandSlug}`;
+    const memberAllowedRoutes = [
+      `${bandPrefix}/songs`,           // Song list (read-only)
+      `${bandPrefix}/setlists`,        // Setlist list (finalised only)
+    ];
 
-    if (!isAllowed) {
-      // Redirect members to their band's songs page
+    // Allow exact matches (song list, setlist list)
+    const isExactMatch = memberAllowedRoutes.includes(pathname);
+
+    // Allow setlist detail pages: /{bandSlug}/setlists/{setlistId}
+    // but NOT sub-routes like /builder, /export, /new
+    const setlistDetailPattern = new RegExp(
+      `^${bandPrefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/setlists/[^/]+$`
+    );
+    const isSetlistDetail =
+      setlistDetailPattern.test(pathname) &&
+      !pathname.endsWith("/new");
+
+    if (!isExactMatch && !isSetlistDetail) {
       return nextjsMiddlewareRedirect(
         request,
-        `/${parsed.bandSlug}/songs`
+        `${bandPrefix}/songs`
       );
     }
 

@@ -117,7 +117,7 @@ export const listSetlists = query({
   },
 });
 
-// Get a single setlist (read-only, scoped to member's band)
+// Get a single setlist (read-only, scoped to member's band, finalised only)
 export const getSetlist = query({
   args: { token: v.string(), setlistId: v.id("setlists") },
   handler: async (ctx, args) => {
@@ -125,7 +125,12 @@ export const getSetlist = query({
     if (!access) return null;
 
     const setlist = await ctx.db.get(args.setlistId);
-    if (!setlist || setlist.bandId !== access.band._id || setlist.archivedAt) {
+    if (
+      !setlist ||
+      setlist.bandId !== access.band._id ||
+      setlist.archivedAt ||
+      setlist.status !== "finalised"
+    ) {
       return null;
     }
 
@@ -133,7 +138,7 @@ export const getSetlist = query({
   },
 });
 
-// Get setlist items with song details (read-only)
+// Get setlist items with song details (read-only, finalised setlists only)
 export const getSetlistItems = query({
   args: { token: v.string(), setlistId: v.id("setlists") },
   handler: async (ctx, args) => {
@@ -141,7 +146,13 @@ export const getSetlistItems = query({
     if (!access) return [];
 
     const setlist = await ctx.db.get(args.setlistId);
-    if (!setlist || setlist.bandId !== access.band._id) return [];
+    if (
+      !setlist ||
+      setlist.bandId !== access.band._id ||
+      setlist.status !== "finalised"
+    ) {
+      return [];
+    }
 
     const items = await ctx.db
       .query("setlistItems")
