@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import {
   convexAuthNextjsMiddleware,
   createRouteMatcher,
@@ -12,78 +11,40 @@ const isPublicRoute = createRouteMatcher([
   "/subscribe",
   "/api/auth/(.*)",
   "/api/stripe/(.*)",
-  "/api/debug-auth",
 ]);
 
 const isAuthPage = createRouteMatcher(["/", "/login"]);
 
-const authMiddleware = convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
+export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   const authenticated = await convexAuth.isAuthenticated();
 
+  // If authenticated and on landing page or login, redirect to dashboard
   if (authenticated && isAuthPage(request)) {
     return nextjsMiddlewareRedirect(request, "/dashboard");
   }
 
+  // Allow public routes
   if (isPublicRoute(request)) {
     return;
   }
 
+  // Allow static assets
   const pathname = request.nextUrl.pathname;
   if (pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico|txt|xml|json)$/i)) {
     return;
   }
 
+  // Check for member auth cookie (band member access still uses cookie-based auth)
   const memberCookie = request.cookies.get("clo_member_auth")?.value;
   if (memberCookie) {
     return;
   }
 
+  // Require Convex Auth for all other routes
   if (!authenticated) {
     return nextjsMiddlewareRedirect(request, "/login");
   }
-}, { verbose: true });
-
-export default async function middleware(request: any, event: any) {
-  const url = new URL(request.url);
-  const hasCode = url.searchParams.has("code");
-
-  if (hasCode) {
-    // Capture console.error output from the library
-    const errors: string[] = [];
-    const origError = console.error;
-    console.error = (...args: any[]) => {
-      const msg = args.map((a: any) => {
-        if (a instanceof Error) return "Error:" + a.message;
-        if (typeof a === "string") return a;
-        try { return JSON.stringify(a)?.substring(0, 500); } catch { return String(a); }
-      }).join(" ");
-      errors.push(msg);
-      origError(...args);
-    };
-
-    const response = await authMiddleware(request, event);
-
-    // Restore console.error
-    console.error = origError;
-
-    // Store error in a cookie so debug-auth endpoint can read it
-    if (errors.length > 0 && response) {
-      const errorMsg = errors.join(" | ").substring(0, 500);
-      const nextResp = response as NextResponse;
-      if (nextResp.cookies) {
-        nextResp.cookies.set("__debug_auth_error", encodeURIComponent(errorMsg), {
-          path: "/",
-          maxAge: 60,
-          httpOnly: false,
-        });
-      }
-    }
-
-    return response;
-  }
-
-  return authMiddleware(request, event);
-}
+});
 
 export const config = {
   matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],

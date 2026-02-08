@@ -31,7 +31,11 @@ export function Header({ band, bands }: HeaderProps) {
   const { signOut } = useAuthActions();
 
   const handleLogout = async () => {
-    await signOut();
+    try {
+      await signOut();
+    } catch (e) {
+      console.error("Sign out error:", e);
+    }
     router.push("/login");
   };
 
