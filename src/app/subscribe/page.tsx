@@ -20,7 +20,7 @@ const features = [
 
 export default function SubscribePage() {
   const router = useRouter();
-  const { user, isActive, isTrial } = useSubscription();
+  const { user, isActive, isTrial, isExpired, daysLeft } = useSubscription();
   const [loading, setLoading] = useState(false);
 
   const handleSubscribe = async () => {
@@ -98,10 +98,16 @@ export default function SubscribePage() {
             <Image src="/logo.webp" alt="Set List Creator" width={200} height={56} />
           </div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">
-            {isTrial ? "Your trial has ended" : "Subscribe to continue"}
+            {isTrial
+              ? "Ready to subscribe?"
+              : isExpired
+                ? "Your trial has ended"
+                : "Subscribe to continue"}
           </h1>
           <p className="text-muted-foreground">
-            Unlock the full power of Set List Creator
+            {isTrial
+              ? `You have ${daysLeft} day${daysLeft !== 1 ? "s" : ""} left on your free trial`
+              : "Unlock the full power of Set List Creator"}
           </p>
         </div>
 
@@ -135,7 +141,9 @@ export default function SubscribePage() {
           </Button>
 
           <p className="text-xs text-muted-foreground text-center mt-3">
-            14-day free trial included. Cancel anytime.
+            {isTrial
+              ? "You won't be charged until your trial ends. Cancel anytime."
+              : "14-day free trial included. Cancel anytime."}
           </p>
         </div>
 
