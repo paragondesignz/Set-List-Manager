@@ -37,10 +37,11 @@ function MemberHeader({
   ];
 
   return (
-    <header className="border-b border-border bg-background">
-      <div className="container mx-auto px-6 h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+    <header className="sticky top-0 z-40 border-b border-border bg-background">
+      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-6">
         <div className="flex items-center gap-3">
           <Image src="/logo.webp" alt="Set List Creator" width={120} height={32} />
+          <span className="text-border text-lg select-none">/</span>
           <span className="text-sm font-medium text-muted-foreground hidden sm:inline">
             {bandName}
           </span>
@@ -54,20 +55,23 @@ function MemberHeader({
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                  "relative flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <link.icon className="h-4 w-4" />
+                <link.icon className="h-4 w-4 sm:hidden" />
                 <span className="hidden sm:inline">{link.label}</span>
+                {isActive && (
+                  <span className="absolute bottom-[-0.6875rem] left-3 right-3 h-0.5 bg-primary rounded-full" />
+                )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center ml-auto gap-2">
           <div className="text-right hidden sm:block">
             <div className="text-sm font-medium leading-tight">{memberName}</div>
             <div className="text-xs text-muted-foreground leading-tight">{memberRole}</div>
@@ -145,7 +149,7 @@ export default function BandLayout({
           memberRole={memberSession.member.role}
           onLogout={memberLogout}
         />
-        <main className="container mx-auto px-4 py-8">{children}</main>
+        <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
       </div>
     );
   }
@@ -199,7 +203,7 @@ export default function BandLayout({
           </button>
         </div>
       )}
-      <main className="container mx-auto px-4 py-8">{children}</main>
+      <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
     </div>
   );
 }

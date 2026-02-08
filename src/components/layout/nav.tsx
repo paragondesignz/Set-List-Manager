@@ -50,14 +50,17 @@ export function Nav({ bandSlug }: NavProps) {
             key={link.href}
             href={link.href}
             className={cn(
-              "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+              "relative flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
               isActive
-                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <link.icon className="h-4 w-4" />
+            <link.icon className="h-4 w-4 sm:hidden" />
             <span className="hidden sm:inline">{link.label}</span>
+            {isActive && (
+              <span className="absolute bottom-[-0.6875rem] left-3 right-3 h-0.5 bg-primary rounded-full" />
+            )}
           </Link>
         );
       })}

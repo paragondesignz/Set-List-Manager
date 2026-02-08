@@ -74,7 +74,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-sm animate-fade-in glass rounded-2xl p-8 border border-white/50 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+      <div className="w-full max-w-sm animate-fade-in bg-card rounded-2xl p-8 border border-border shadow-lg">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <Image src="/logo.webp" alt="Set List Creator" width={200} height={56} />
@@ -117,7 +117,7 @@ export default function LoginPage() {
             <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white/60 px-2 text-muted-foreground">
+            <span className="bg-card px-2 text-muted-foreground">
               or continue with email
             </span>
           </div>
@@ -132,14 +132,14 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoFocus
-              className="h-12 bg-white/50 border-white/60"
+              className="h-12"
             />
             <Input
               type="password"
               placeholder={mode === "signup" ? "Password (min 8 characters)" : "Password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-12 bg-white/50 border-white/60"
+              className="h-12"
             />
           </div>
 

@@ -212,7 +212,7 @@ export default function TemplatesPage() {
                 className={`text-left p-4 rounded-lg border transition-all ${
                   exists
                     ? "bg-muted/50 opacity-60 cursor-not-allowed"
-                    : "glass-subtle hover:border-primary/50 hover:shadow-sm"
+                    : "bg-card border-border hover:border-primary/50 hover:shadow-sm"
                 }`}
               >
                 <div className="font-medium text-sm">{preset.name}</div>

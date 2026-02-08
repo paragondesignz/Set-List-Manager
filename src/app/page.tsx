@@ -124,7 +124,7 @@ export default function LandingPage() {
             {features.map((f) => (
               <div
                 key={f.title}
-                className="rounded-xl border border-white/50 glass p-6 hover-lift"
+                className="rounded-xl border border-border bg-card p-6 hover-lift"
               >
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <f.icon className="h-5 w-5 text-primary" />
@@ -140,7 +140,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 px-6 bg-white/30">
+      <section className="py-20 px-6 bg-muted/30">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-bold tracking-tight mb-3">
@@ -177,7 +177,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border-2 border-primary/20 glass p-8">
+          <div className="rounded-xl border-2 border-primary/20 bg-card p-8">
             <div className="flex items-baseline justify-between mb-6">
               <div>
                 <h3 className="text-xl font-bold">Set List Creator Pro</h3>
@@ -212,7 +212,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6 bg-white/30">
+      <section className="py-20 px-6 bg-muted/30">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-4">
             Ready to build better setlists?
@@ -230,7 +230,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/40 py-8 px-6">
+      <footer className="border-t border-border py-8 px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center">
             <Image
