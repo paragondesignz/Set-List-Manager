@@ -2,28 +2,18 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { useBandsList } from "@/lib/convex";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { UserMenu } from "@/components/layout/user-menu";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { signOut } = useAuthActions();
   const bands = useBandsList();
   const { isLoading, isExpired } = useSubscription();
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-    } catch (e) {
-      console.error("Sign out error:", e);
-    }
-    router.push("/login");
-  };
 
   // Redirect to subscribe if subscription expired
   useEffect(() => {
@@ -60,9 +50,7 @@ export default function DashboardPage() {
             <Link href="/dashboard" className="flex items-center">
               <Image src="/logo.webp" alt="Set List Creator" width={120} height={32} />
             </Link>
-            <Button variant="ghost" size="icon-sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <UserMenu />
           </div>
         </header>
         <div className="p-8 max-w-5xl mx-auto">
@@ -108,9 +96,7 @@ export default function DashboardPage() {
           <Link href="/dashboard" className="flex items-center">
             <Image src="/set-list-creator-logo-trans.png" alt="Set List Creator" width={28} height={28} />
           </Link>
-          <Button variant="ghost" size="icon-sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <UserMenu />
         </div>
       </header>
       <div className="flex items-center justify-center p-8" style={{ minHeight: "calc(100vh - 49px)" }}>

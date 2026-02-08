@@ -12,7 +12,7 @@ function getStripe() {
 export async function POST(req: Request) {
   try {
     const stripe = getStripe();
-    const { stripeCustomerId } = await req.json();
+    const { stripeCustomerId, returnUrl } = await req.json();
 
     if (!stripeCustomerId) {
       return NextResponse.json(
@@ -21,9 +21,12 @@ export async function POST(req: Request) {
       );
     }
 
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://setlistcreator.co.nz";
+    const validReturn = returnUrl === "/settings" ? "/settings" : "/dashboard";
+
     const session = await stripe.billingPortal.sessions.create({
       customer: stripeCustomerId,
-      return_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://setlistcreator.co.nz"}/dashboard`,
+      return_url: `${baseUrl}${validReturn}`,
     });
 
     return NextResponse.json({ url: session.url });

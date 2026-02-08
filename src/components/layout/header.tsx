@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { Button } from "@/components/ui/button";
-import { LogOut, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +12,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Nav } from "./nav";
+import { UserMenu } from "./user-menu";
 
 type Band = {
   _id: string;
@@ -27,18 +26,6 @@ type HeaderProps = {
 };
 
 export function Header({ band, bands }: HeaderProps) {
-  const router = useRouter();
-  const { signOut } = useAuthActions();
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-    } catch (e) {
-      console.error("Sign out error:", e);
-    }
-    router.push("/login");
-  };
-
   return (
     <header className="border-b border-border bg-background">
       <div className="container mx-auto px-6 h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
@@ -84,14 +71,7 @@ export function Header({ band, bands }: HeaderProps) {
         {band && <Nav bandSlug={band.slug} />}
 
         <div className="flex justify-end">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleLogout}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <UserMenu />
         </div>
       </div>
     </header>

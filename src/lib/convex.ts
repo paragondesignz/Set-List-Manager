@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 
 // We intentionally use string UDF names so the app works even before codegen
 // creates `convex/_generated/api`.
@@ -10,6 +10,22 @@ const q = (name: string) => name as any;
 
 export function useCurrentUser() {
   return useQuery(q("users:currentUser"));
+}
+
+export function useAuthProvider() {
+  return useQuery(q("users:getAuthProvider"));
+}
+
+export function useUpdateProfile() {
+  return useMutation(q("users:updateProfile"));
+}
+
+export function useDeleteAccount() {
+  return useMutation(q("users:deleteAccount"));
+}
+
+export function useChangePassword() {
+  return useAction(q("users:changePassword"));
 }
 
 // ============================================================================
