@@ -77,7 +77,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm animate-fade-in">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Image src="/logo.png" alt="Set List Creator" width={200} height={56} />
+            <Image src="/logo.webp" alt="Set List Creator" width={200} height={56} />
           </div>
           <p className="text-muted-foreground text-sm">
             Professional setlist creation

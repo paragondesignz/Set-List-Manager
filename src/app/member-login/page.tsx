@@ -51,7 +51,7 @@ export default function MemberLoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex items-center justify-center">
-            <Image src="/logo.png" alt="Set List Creator" width={160} height={44} />
+            <Image src="/logo.webp" alt="Set List Creator" width={160} height={44} />
           </div>
           <CardTitle className="text-xl">Band Member Access</CardTitle>
           <CardDescription>

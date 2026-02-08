@@ -82,7 +82,7 @@ export default function LandingPage() {
         <div className="relative max-w-5xl mx-auto px-6 pt-20 pb-24 text-center">
           <div className="flex justify-center mb-6">
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="Set List Creator"
               width={280}
               height={80}
@@ -234,7 +234,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center">
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="Set List Creator"
               width={100}
               height={28}

@@ -10,7 +10,13 @@ const EmailSchema = z.object({
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
-    Google,
+    Google({
+      authorization: {
+        params: {
+          prompt: "select_account",
+        },
+      },
+    }),
     Password({
       profile(params) {
         const result = EmailSchema.safeParse(params);

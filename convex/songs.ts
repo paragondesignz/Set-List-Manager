@@ -53,7 +53,7 @@ export const list = query({
       .collect();
 
     return all
-      .filter((s) => (includeArchived ? true : s.archivedAt === undefined))
+      .filter((s) => (includeArchived ? s.archivedAt !== undefined : s.archivedAt === undefined))
       .filter((s) => {
         if (!search) return true;
         return (

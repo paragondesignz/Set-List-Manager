@@ -24,7 +24,7 @@ export const list = query({
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .collect();
     return all
-      .filter((b) => (includeArchived ? true : b.archivedAt === undefined))
+      .filter((b) => (includeArchived ? b.archivedAt !== undefined : b.archivedAt === undefined))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 });
