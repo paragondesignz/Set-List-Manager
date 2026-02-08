@@ -161,14 +161,14 @@ export default function MembersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-2 p-3 rounded-xl bg-card border border-border/60 shadow-sm">
+      <div className="flex items-center gap-2 p-3 rounded-xl glass-subtle border border-white/50 shadow-sm">
         <Switch checked={showArchived} onCheckedChange={setShowArchived} />
         <span className="text-sm text-muted-foreground">Show archived</span>
       </div>
 
       {/* Selection Actions */}
       {selectedMembers.size > 0 && (
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-card border border-border/60 shadow-sm animate-slide-up">
+        <div className="flex items-center gap-2 p-2.5 rounded-xl glass-subtle border border-white/50 shadow-sm animate-slide-up">
           <span className="text-sm font-medium">
             {selectedMembers.size} selected
           </span>
@@ -195,7 +195,7 @@ export default function MembersPage() {
       {members === undefined ? (
         <div className="text-center py-12 text-muted-foreground">Loading...</div>
       ) : members.length === 0 ? (
-        <div className="rounded-lg border border-border bg-card p-12 text-center">
+        <div className="rounded-lg border border-white/50 glass-subtle p-12 text-center">
           <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">No band members yet</p>
           <Button onClick={() => setCreateOpen(true)}>
@@ -204,7 +204,7 @@ export default function MembersPage() {
           </Button>
         </div>
       ) : (
-        <div className="rounded-lg border border-border overflow-hidden bg-card">
+        <div className="rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>

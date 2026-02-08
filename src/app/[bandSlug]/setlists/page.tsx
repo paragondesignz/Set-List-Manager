@@ -122,7 +122,7 @@ export default function SetlistsPage() {
 
     if (setlists.length === 0) {
       return (
-        <div className="rounded-lg border border-border bg-card p-12 text-center">
+        <div className="rounded-lg border border-white/50 glass-subtle p-12 text-center">
           <ListMusic className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">No setlists yet</p>
           <Button asChild>
@@ -136,7 +136,7 @@ export default function SetlistsPage() {
     }
 
     return (
-      <div className="rounded-lg border border-border overflow-hidden bg-card">
+      <div className="rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>

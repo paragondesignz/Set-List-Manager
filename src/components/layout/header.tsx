@@ -40,9 +40,9 @@ export function Header({ band, bands }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background">
-      <div className="container mx-auto px-4 h-12 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-50 border-b border-white/40 glass-header">
+      <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-6">
+        <div className="flex items-center gap-3">
           <Link
             href="/dashboard"
             className="flex items-center"
@@ -50,10 +50,12 @@ export function Header({ band, bands }: HeaderProps) {
             <Image src="/logo.webp" alt="Set List Creator" width={120} height={32} />
           </Link>
 
+          {band && <div className="h-5 w-px bg-border/60" />}
+
           {band && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1.5 text-sm h-8">
+                <Button variant="ghost" size="sm" className="gap-1.5 text-sm h-8 font-semibold">
                   {band.name}
                   <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                 </Button>
@@ -87,7 +89,7 @@ export function Header({ band, bands }: HeaderProps) {
           variant="ghost"
           size="icon-sm"
           onClick={handleLogout}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground hover:bg-white/50"
         >
           <LogOut className="h-4 w-4" />
         </Button>

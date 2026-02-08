@@ -105,7 +105,7 @@ export default function SubscribePage() {
           </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 mb-6">
+        <div className="rounded-xl border border-white/50 glass p-6 mb-6">
           <div className="flex items-baseline justify-between mb-6">
             <div>
               <h2 className="text-lg font-semibold">Set List Creator Pro</h2>

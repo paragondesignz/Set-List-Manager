@@ -55,12 +55,12 @@ export default function DashboardPage() {
   if (bands.length > 1) {
     return (
       <div className="min-h-screen">
-        <header className="sticky top-0 z-50 border-b border-border bg-background">
-          <div className="container mx-auto px-4 h-12 flex items-center justify-between">
+        <header className="sticky top-0 z-50 border-b border-white/40 glass-header">
+          <div className="container mx-auto px-4 h-14 flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center">
               <Image src="/logo.webp" alt="Set List Creator" width={120} height={32} />
             </Link>
-            <Button variant="ghost" size="icon-sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="icon-sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground hover:bg-white/50">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -80,7 +80,7 @@ export default function DashboardPage() {
               <Link
                 key={band._id}
                 href={`/${band.slug}`}
-                className="block p-6 rounded-xl border border-border bg-card hover:bg-accent transition-colors"
+                className="block p-6 rounded-xl border border-white/50 glass hover:bg-white/70 transition-colors"
               >
                 <h2 className="text-xl font-semibold">{band.name}</h2>
               </Link>
@@ -103,12 +103,12 @@ export default function DashboardPage() {
   // If no bands, show create prompt
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-50 border-b border-border bg-background">
-        <div className="container mx-auto px-4 h-12 flex items-center justify-between">
+      <header className="sticky top-0 z-50 border-b border-white/40 glass-header">
+        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center">
             <Image src="/set-list-creator-logo-trans.png" alt="Set List Creator" width={28} height={28} />
           </Link>
-          <Button variant="ghost" size="icon-sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="icon-sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground hover:bg-white/50">
             <LogOut className="h-4 w-4" />
           </Button>
         </div>

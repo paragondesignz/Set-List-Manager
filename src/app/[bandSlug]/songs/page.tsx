@@ -265,7 +265,7 @@ export default function SongsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-card border border-border/60 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl glass-subtle border border-white/50 shadow-sm">
         <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -319,7 +319,7 @@ export default function SongsPage() {
 
       {/* Bulk Actions */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-card border border-border/60 shadow-sm animate-slide-up">
+        <div className="flex items-center gap-2 p-2.5 rounded-xl glass-subtle border border-white/50 shadow-sm animate-slide-up">
           <span className="text-sm font-medium">
             {selectedIds.size} selected
           </span>
@@ -339,7 +339,7 @@ export default function SongsPage() {
       )}
 
       {/* Table */}
-      <div className="bg-card rounded-xl overflow-hidden">
+      <div className="rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
