@@ -140,6 +140,10 @@ export function useCreateSetlistFromTemplate() {
   return useMutation(q("setlists:createFromTemplate"));
 }
 
+export function useRemoveSetFromSetlist() {
+  return useMutation(q("setlists:removeSet"));
+}
+
 // ============================================================================
 // Setlist Items
 // ============================================================================

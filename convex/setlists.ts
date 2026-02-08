@@ -231,6 +231,52 @@ export const remove = mutation({
   }
 });
 
+export const removeSet = mutation({
+  args: {
+    setlistId: v.id("setlists"),
+    setIndex: v.number()
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.setlistId);
+    if (!existing) throw new Error("Setlist not found.");
+    await assertBandOwner(ctx, existing.bandId);
+
+    if (existing.setsConfig.length <= 1) {
+      throw new Error("Cannot remove the last set.");
+    }
+
+    // 1. Delete all items in the removed set
+    const allItems = await ctx.db
+      .query("setlistItems")
+      .withIndex("by_setlistId", (q) => q.eq("setlistId", args.setlistId))
+      .collect();
+
+    const removedSetItems = allItems.filter((i) => i.setIndex === args.setIndex);
+    for (const item of removedSetItems) {
+      await ctx.db.delete(item._id);
+    }
+
+    // 2. Decrement setIndex on items in higher-numbered sets
+    const higherItems = allItems.filter((i) => i.setIndex > args.setIndex);
+    for (const item of higherItems) {
+      await ctx.db.patch(item._id, { setIndex: item.setIndex - 1 });
+    }
+
+    // 3. Update setsConfig: remove the set, re-index remaining
+    const newConfig = existing.setsConfig
+      .filter((c: { setIndex: number; songsPerSet: number }) => c.setIndex !== args.setIndex)
+      .map((c: { setIndex: number; songsPerSet: number }, idx: number) => ({
+        setIndex: idx + 1,
+        songsPerSet: c.songsPerSet
+      }));
+
+    await ctx.db.patch(args.setlistId, {
+      setsConfig: newConfig,
+      updatedAt: Date.now()
+    });
+  }
+});
+
 export const createFromTemplate = mutation({
   args: {
     bandId: v.id("bands"),

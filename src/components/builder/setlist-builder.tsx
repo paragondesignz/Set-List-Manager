@@ -29,7 +29,10 @@ import {
   useRemoveSetlistItem,
   useSwapSetlistSong,
   useClearSet,
-  useClearAllSets
+  useClearAllSets,
+  useUpdateSetlist,
+  useRemoveSetFromSetlist,
+  useTemplatesList
 } from "@/lib/convex";
 import {
   generateSetlist,
@@ -75,7 +78,10 @@ import {
   GripVertical,
   Pin,
   Search,
-  ArrowUpDown
+  ArrowUpDown,
+  Plus,
+  Trash2,
+  FileStack
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -271,7 +277,10 @@ function SetColumn({
   onToggleCollapse,
   onRemoveItem,
   onSwapItem,
-  onClearSet
+  onClearSet,
+  onUpdateSongsPerSet,
+  onRemoveSet,
+  canRemove
 }: {
   config: SetConfig;
   items: Item[];
@@ -282,7 +291,26 @@ function SetColumn({
   onRemoveItem: (itemId: string) => void;
   onSwapItem: (itemId: string) => void;
   onClearSet: () => void;
+  onUpdateSongsPerSet: (n: number) => void;
+  onRemoveSet: () => void;
+  canRemove: boolean;
 }) {
+  const [localSongsPerSet, setLocalSongsPerSet] = React.useState(String(config.songsPerSet));
+
+  // Sync local state when config changes externally
+  React.useEffect(() => {
+    setLocalSongsPerSet(String(config.songsPerSet));
+  }, [config.songsPerSet]);
+
+  const commitSongsPerSet = () => {
+    const n = parseInt(localSongsPerSet, 10);
+    if (!isNaN(n) && n >= 1 && n <= 50 && n !== config.songsPerSet) {
+      onUpdateSongsPerSet(n);
+    } else {
+      setLocalSongsPerSet(String(config.songsPerSet));
+    }
+  };
+
   const droppable = useDroppable({
     id: `set:${config.setIndex}`,
     data: { type: "set", setIndex: config.setIndex }
@@ -323,8 +351,22 @@ function SetColumn({
               !isFull && "text-muted-foreground"
             )}
           >
-            {items.length} / {config.songsPerSet}
+            {items.length} /
           </span>
+          <Input
+            type="number"
+            min={1}
+            max={50}
+            value={localSongsPerSet}
+            onChange={(e) => setLocalSongsPerSet(e.target.value)}
+            onBlur={commitSongsPerSet}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.currentTarget.blur();
+              }
+            }}
+            className="w-12 h-6 text-xs text-center font-mono px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
           {items.length > 0 && (
             <Button
               type="button"
@@ -333,6 +375,17 @@ function SetColumn({
               onClick={onClearSet}
             >
               Clear
+            </Button>
+          )}
+          {canRemove && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              className="text-muted-foreground hover:text-destructive"
+              onClick={onRemoveSet}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>
@@ -391,25 +444,38 @@ function SwapSongDialog({
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [search, setSearch] = React.useState("");
   const [swapping, setSwapping] = React.useState(false);
+  const [swapVocalFilter, setSwapVocalFilter] = React.useState<number | null>(null);
+  const [swapEnergyFilter, setSwapEnergyFilter] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     if (!open) {
       setSelectedId(null);
       setSearch("");
+      setSwapVocalFilter(null);
+      setSwapEnergyFilter(null);
     }
   }, [open]);
 
   const currentSong = songsById.get(currentSongId);
 
   const filtered = React.useMemo(() => {
+    let result = availableSongs;
     const q = search.trim().toLowerCase();
-    if (!q) return availableSongs;
-    return availableSongs.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) ||
-        s.artist.toLowerCase().includes(q)
-    );
-  }, [availableSongs, search]);
+    if (q) {
+      result = result.filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.artist.toLowerCase().includes(q)
+      );
+    }
+    if (swapVocalFilter !== null) {
+      result = result.filter((s) => s.vocalIntensity === swapVocalFilter);
+    }
+    if (swapEnergyFilter !== null) {
+      result = result.filter((s) => s.energyLevel === swapEnergyFilter);
+    }
+    return result;
+  }, [availableSongs, search, swapVocalFilter, swapEnergyFilter]);
 
   const handleSwap = async () => {
     if (!selectedId) return;
@@ -442,6 +508,49 @@ function SwapSongDialog({
           />
         </div>
 
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={swapVocalFilter?.toString() ?? "all"}
+            onValueChange={(v) => setSwapVocalFilter(v === "all" ? null : Number(v))}
+          >
+            <SelectTrigger className="h-7 w-[100px] text-xs">
+              <SelectValue placeholder="Vocal" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Vocal</SelectItem>
+              {[1, 2, 3, 4, 5].map((v) => (
+                <SelectItem key={v} value={v.toString()}>{VOCAL_INTENSITY_LABELS[v]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={swapEnergyFilter?.toString() ?? "all"}
+            onValueChange={(v) => setSwapEnergyFilter(v === "all" ? null : Number(v))}
+          >
+            <SelectTrigger className="h-7 w-[110px] text-xs">
+              <SelectValue placeholder="Energy" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Energy</SelectItem>
+              {[1, 2, 3, 4, 5].map((v) => (
+                <SelectItem key={v} value={v.toString()}>{ENERGY_LEVEL_LABELS[v]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {(swapVocalFilter !== null || swapEnergyFilter !== null) && (
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-7 text-xs text-muted-foreground"
+              onClick={() => { setSwapVocalFilter(null); setSwapEnergyFilter(null); }}
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+
         <div className="max-h-[280px] overflow-auto rounded-md border">
           {filtered.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
@@ -454,7 +563,7 @@ function SwapSongDialog({
                   key={song._id}
                   type="button"
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left transition-colors",
+                    "flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left transition-colors",
                     selectedId === song._id
                       ? "bg-ring/10 ring-1 ring-ring"
                       : "hover:bg-muted"
@@ -466,6 +575,14 @@ function SwapSongDialog({
                     <div className="truncate text-xs text-muted-foreground">
                       {song.artist}
                     </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Badge variant="outline" className={cn("h-5 px-1.5 text-[10px]", VOCAL_INTENSITY_COLORS[song.vocalIntensity])}>
+                      {VOCAL_INTENSITY_SHORT[song.vocalIntensity]}
+                    </Badge>
+                    <Badge variant="outline" className={cn("h-5 px-1.5 text-[10px]", ENERGY_LEVEL_COLORS[song.energyLevel])}>
+                      {ENERGY_LEVEL_SHORT[song.energyLevel]}
+                    </Badge>
                   </div>
                 </button>
               ))}
@@ -479,6 +596,133 @@ function SwapSongDialog({
           </Button>
           <Button onClick={handleSwap} disabled={!selectedId || swapping}>
             {swapping ? "Swapping..." : "Swap"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type TemplateConfig = {
+  setIndex: number;
+  songsPerSet: number;
+  pinnedSlots: { position: number; songId?: string }[];
+};
+
+function ApplyTemplateDialog({
+  open,
+  onOpenChange,
+  bandId,
+  onApply
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  bandId: string;
+  onApply: (template: { _id: string; name: string; setsConfig: TemplateConfig[] }) => Promise<void>;
+}) {
+  const templates = useTemplatesList({ bandId });
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [confirmed, setConfirmed] = React.useState(false);
+  const [applying, setApplying] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!open) {
+      setSelectedId(null);
+      setConfirmed(false);
+    }
+  }, [open]);
+
+  const selectedTemplate = templates?.find((t: any) => t._id === selectedId);
+
+  const handleApply = async () => {
+    if (!selectedTemplate) return;
+    setApplying(true);
+    try {
+      await onApply(selectedTemplate as any);
+      onOpenChange(false);
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Apply Template</DialogTitle>
+          <DialogDescription>
+            Apply a template to this setlist. This will clear all current songs and replace the set structure.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="max-h-[280px] overflow-auto rounded-md border">
+          {!templates ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              Loading...
+            </div>
+          ) : templates.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              No templates found. Create one from an existing setlist first.
+            </div>
+          ) : (
+            <div className="p-1.5 space-y-1">
+              {templates.map((template: any) => {
+                const totalSongs = template.setsConfig.reduce(
+                  (sum: number, s: any) => sum + s.songsPerSet,
+                  0
+                );
+                const pinnedCount = template.setsConfig.reduce(
+                  (sum: number, s: any) => sum + (s.pinnedSlots?.length ?? 0),
+                  0
+                );
+                return (
+                  <button
+                    key={template._id}
+                    type="button"
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left transition-colors",
+                      selectedId === template._id
+                        ? "bg-ring/10 ring-1 ring-ring"
+                        : "hover:bg-muted"
+                    )}
+                    onClick={() => setSelectedId(template._id)}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{template.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {template.setsConfig.length} set{template.setsConfig.length !== 1 ? "s" : ""} · {totalSongs} songs
+                        {pinnedCount > 0 && ` · ${pinnedCount} pinned`}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {selectedTemplate && (
+          <label className="flex items-start gap-2 text-sm">
+            <Checkbox
+              checked={confirmed}
+              onCheckedChange={(c) => setConfirmed(c === true)}
+              className="mt-0.5"
+            />
+            <span className="text-muted-foreground">
+              I understand this will clear all current songs and replace the set structure
+            </span>
+          </label>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleApply}
+            disabled={!selectedTemplate || !confirmed || applying}
+          >
+            {applying ? "Applying..." : "Apply Template"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -514,12 +758,17 @@ export function SetlistBuilder({
   const [useCamelot, setUseCamelot] = React.useState(false); // Harmonic key ordering
   const [lastFlowPreset, setLastFlowPreset] = React.useState<FlowPreset | null>(null);
 
+  const [showTemplateDialog, setShowTemplateDialog] = React.useState(false);
+  const [confirmRemoveSet, setConfirmRemoveSet] = React.useState<number | null>(null);
+
   const addSong = useAddSetlistSong();
   const moveItem = useMoveSetlistItem();
   const removeItem = useRemoveSetlistItem();
   const swapSong = useSwapSetlistSong();
   const clearSet = useClearSet();
   const clearAll = useClearAllSets();
+  const updateSetlist = useUpdateSetlist();
+  const removeSetMutation = useRemoveSetFromSetlist();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -791,6 +1040,97 @@ export function SetlistBuilder({
     }
   };
 
+  const handleUpdateSongsPerSet = async (setIndex: number, value: number) => {
+    const newConfig = setsConfig.map((c) =>
+      c.setIndex === setIndex ? { ...c, songsPerSet: value } : c
+    );
+    try {
+      await updateSetlist({
+        setlistId: setlistId as any,
+        patch: { setsConfig: newConfig }
+      });
+    } catch (e: any) {
+      toast.error("Failed to update", { description: e?.message });
+    }
+  };
+
+  const handleAddSet = async () => {
+    const maxIndex = Math.max(...setsConfig.map((c) => c.setIndex), 0);
+    const newConfig = [
+      ...setsConfig,
+      { setIndex: maxIndex + 1, songsPerSet: 12 }
+    ];
+    try {
+      await updateSetlist({
+        setlistId: setlistId as any,
+        patch: { setsConfig: newConfig }
+      });
+      toast.success(`Set ${maxIndex + 1} added`);
+    } catch (e: any) {
+      toast.error("Failed to add set", { description: e?.message });
+    }
+  };
+
+  const handleRemoveSet = async (setIndex: number) => {
+    try {
+      await removeSetMutation({
+        setlistId: setlistId as any,
+        setIndex
+      });
+      setConfirmRemoveSet(null);
+      toast.success(`Set ${setIndex} removed`);
+    } catch (e: any) {
+      toast.error("Failed to remove set", { description: e?.message });
+    }
+  };
+
+  const handleApplyTemplate = async (template: {
+    _id: string;
+    name: string;
+    setsConfig: TemplateConfig[];
+  }) => {
+    // 1. Clear all songs
+    await clearAll({ setlistId: setlistId as any });
+
+    // 2. Update setsConfig from template (strip pinnedSlots for setlist config)
+    const newSetsConfig = template.setsConfig.map((s) => ({
+      setIndex: s.setIndex,
+      songsPerSet: s.songsPerSet
+    }));
+    await updateSetlist({
+      setlistId: setlistId as any,
+      patch: { setsConfig: newSetsConfig }
+    });
+
+    // 3. Add pinned songs from template
+    let addedCount = 0;
+    for (const setConfig of template.setsConfig) {
+      for (const slot of setConfig.pinnedSlots ?? []) {
+        if (slot.songId) {
+          try {
+            await addSong({
+              setlistId: setlistId as any,
+              songId: slot.songId as any,
+              setIndex: setConfig.setIndex,
+              position: slot.position,
+              isPinned: true
+            });
+            addedCount++;
+          } catch {
+            // Song may have been deleted — skip
+          }
+        }
+      }
+    }
+
+    setLastFlowPreset(null);
+    toast.success(`Template "${template.name}" applied`, {
+      description: addedCount > 0
+        ? `${addedCount} pinned song${addedCount !== 1 ? "s" : ""} added`
+        : undefined
+    });
+  };
+
   const handleAutoGenerate = async (flowPreset: FlowPreset = "classic") => {
     // Clear first
     await handleClearAll();
@@ -1045,6 +1385,22 @@ export function SetlistBuilder({
               )}
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTemplateDialog(true)}
+              >
+                <FileStack className="h-3.5 w-3.5 mr-1.5" />
+                Template
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void handleAddSet()}
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Add Set
+              </Button>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1144,6 +1500,16 @@ export function SetlistBuilder({
                   onRemoveItem={handleRemoveItem}
                   onSwapItem={setSwapItem}
                   onClearSet={() => void handleClearSet(config.setIndex)}
+                  onUpdateSongsPerSet={(n) => void handleUpdateSongsPerSet(config.setIndex, n)}
+                  onRemoveSet={() => {
+                    const setItems = itemsBySet.get(config.setIndex) ?? [];
+                    if (setItems.length > 0) {
+                      setConfirmRemoveSet(config.setIndex);
+                    } else {
+                      void handleRemoveSet(config.setIndex);
+                    }
+                  }}
+                  canRemove={setsConfig.length > 1}
                 />
               ))}
           </div>
@@ -1195,6 +1561,46 @@ export function SetlistBuilder({
         songsById={songsById}
         onSwap={handleSwapSong}
       />
+
+      {/* Apply Template Dialog */}
+      <ApplyTemplateDialog
+        open={showTemplateDialog}
+        onOpenChange={setShowTemplateDialog}
+        bandId={bandId}
+        onApply={handleApplyTemplate}
+      />
+
+      {/* Confirm Remove Set Dialog */}
+      <Dialog
+        open={confirmRemoveSet !== null}
+        onOpenChange={(open) => !open && setConfirmRemoveSet(null)}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove Set {confirmRemoveSet}?</DialogTitle>
+            <DialogDescription>
+              This set has {confirmRemoveSet !== null
+                ? (itemsBySet.get(confirmRemoveSet) ?? []).length
+                : 0} song{(confirmRemoveSet !== null ? (itemsBySet.get(confirmRemoveSet) ?? []).length : 0) !== 1 ? "s" : ""} that will be removed. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmRemoveSet(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirmRemoveSet !== null) {
+                  void handleRemoveSet(confirmRemoveSet);
+                }
+              }}
+            >
+              Remove Set
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DndContext>
   );
 }
