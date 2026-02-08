@@ -13,7 +13,16 @@ const isPublicRoute = createRouteMatcher([
   "/api/stripe/(.*)",
 ]);
 
+const isAuthPage = createRouteMatcher(["/", "/login"]);
+
 export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
+  const authenticated = await convexAuth.isAuthenticated();
+
+  // If authenticated and on landing page or login, redirect to dashboard
+  if (authenticated && isAuthPage(request)) {
+    return nextjsMiddlewareRedirect(request, "/dashboard");
+  }
+
   // Allow public routes
   if (isPublicRoute(request)) {
     return;
@@ -28,13 +37,11 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   // Check for member auth cookie (band member access still uses cookie-based auth)
   const memberCookie = request.cookies.get("clo_member_auth")?.value;
   if (memberCookie) {
-    // Let member-authenticated users through to band pages
-    // The member cookie validation happens in the existing member-login flow
     return;
   }
 
   // Require Convex Auth for all other routes
-  if (!(await convexAuth.isAuthenticated())) {
+  if (!authenticated) {
     return nextjsMiddlewareRedirect(request, "/login");
   }
 });

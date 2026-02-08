@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useConvexAuth } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,12 +11,20 @@ import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { isAuthenticated, isLoading } = useConvexAuth();
   const { signIn } = useAuthActions();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Redirect to dashboard once authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +43,7 @@ export default function LoginPage() {
       formData.set("flow", mode === "signup" ? "signUp" : "signIn");
 
       await signIn("password", formData);
-      router.push("/dashboard");
+      // The useEffect above will handle the redirect once isAuthenticated flips
     } catch (err: any) {
       if (mode === "signin") {
         setError("Invalid email or password");
@@ -53,6 +62,15 @@ export default function LoginPage() {
       setError("Google sign-in failed. Please try again.");
     }
   };
+
+  // If already authenticated, show loading while redirecting
+  if (!isLoading && isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Redirecting...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
