@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
   Music,
   ListMusic,
   Users,
@@ -19,12 +18,6 @@ export function Nav({ bandSlug }: NavProps) {
   const pathname = usePathname();
 
   const links = [
-    {
-      href: `/${bandSlug}`,
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      exact: true
-    },
     {
       href: `/${bandSlug}/songs`,
       label: "Songs",

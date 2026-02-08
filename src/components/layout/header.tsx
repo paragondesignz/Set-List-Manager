@@ -41,7 +41,7 @@ export function Header({ band, bands }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background">
-      <div className="container mx-auto px-4 h-12 flex items-center justify-between gap-4">
+      <div className="container mx-auto px-4 h-12 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard"
@@ -79,18 +79,20 @@ export function Header({ band, bands }: HeaderProps) {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-
-          {band && <Nav bandSlug={band.slug} />}
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={handleLogout}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
+        {band && <Nav bandSlug={band.slug} />}
+
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleLogout}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </header>
   );
