@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import {
   convexAuthNextjsMiddleware,
   createRouteMatcher,
@@ -52,9 +53,9 @@ export default async function middleware(request: any, event: any) {
     const origError = console.error;
     console.error = (...args: any[]) => {
       const msg = args.map((a: any) => {
-        if (a instanceof Error) return a.message + " | " + a.stack?.substring(0, 300);
+        if (a instanceof Error) return "Error:" + a.message;
         if (typeof a === "string") return a;
-        try { return JSON.stringify(a)?.substring(0, 300); } catch { return String(a); }
+        try { return JSON.stringify(a)?.substring(0, 500); } catch { return String(a); }
       }).join(" ");
       errors.push(msg);
       origError(...args);
@@ -65,13 +66,17 @@ export default async function middleware(request: any, event: any) {
     // Restore console.error
     console.error = origError;
 
-    // Log captured errors
-    if (errors.length > 0) {
-      for (const err of errors) {
-        console.log("CAPTURED_AUTH_ERROR: " + err.substring(0, 200));
+    // Store error in a cookie so debug-auth endpoint can read it
+    if (errors.length > 0 && response) {
+      const errorMsg = errors.join(" | ").substring(0, 500);
+      const nextResp = response as NextResponse;
+      if (nextResp.cookies) {
+        nextResp.cookies.set("__debug_auth_error", encodeURIComponent(errorMsg), {
+          path: "/",
+          maxAge: 60,
+          httpOnly: false,
+        });
       }
-    } else {
-      console.log("OAUTH_CODE_EXCHANGE: no errors captured");
     }
 
     return response;
