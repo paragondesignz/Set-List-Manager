@@ -6,17 +6,6 @@ const nextConfig: NextConfig = {
   experimental: {
     esmExternals: "loose",
   },
-  // Redirect www to non-www to prevent auth cookie domain mismatches
-  async redirects() {
-    return [
-      {
-        source: "/:path*",
-        has: [{ type: "host", value: "www.setlistcreator.co.nz" }],
-        destination: "https://setlistcreator.co.nz/:path*",
-        permanent: true,
-      },
-    ];
-  },
   webpack: (config) => {
     // Handle @react-pdf/renderer canvas dependency
     config.resolve.alias = {
