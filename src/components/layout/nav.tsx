@@ -48,7 +48,7 @@ export function Nav({ bandSlug }: NavProps) {
   ];
 
   return (
-    <nav className="flex items-center gap-0.5">
+    <nav className="flex items-center gap-1">
       {links.map((link) => {
         const isActive = link.exact
           ? pathname === link.href
@@ -59,10 +59,10 @@ export function Nav({ bandSlug }: NavProps) {
             key={link.href}
             href={link.href}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
+              "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200",
               isActive
-                ? "bg-primary/90 text-primary-foreground shadow-md shadow-primary/25 backdrop-blur-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-white/50"
+                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
             )}
           >
             <link.icon className="h-4 w-4" />
