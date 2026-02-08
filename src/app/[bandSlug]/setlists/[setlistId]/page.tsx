@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   useBandBySlug,
   useSetlist,
@@ -11,6 +12,7 @@ import {
   useMemberSetlist,
   useMemberSetlistItems,
   useMemberSongsList,
+  useMultipleStorageUrls,
   useUpdateSetlist,
   useFinaliseSetlist,
   useRemoveSetlist
@@ -33,6 +35,8 @@ import {
   Pencil,
   ListMusic,
   FileDown,
+  Package,
+  Loader2,
   Mail,
   Trash2,
   Check,
@@ -40,6 +44,22 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { toast } from "sonner";
+
+const BandPackDownloadButton = dynamic(
+  () =>
+    import("@/components/export/band-pack-download-button").then(
+      (mod) => mod.BandPackDownloadButton
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <Button variant="outline" disabled>
+        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        Loading...
+      </Button>
+    )
+  }
+);
 
 export default function SetlistDetailPage() {
   const params = useParams();
@@ -74,6 +94,21 @@ export default function SetlistDetailPage() {
   const items = isMember ? memberItems : adminItems;
   const songs = isMember ? memberSongs : adminSongs;
 
+  // Collect chart storage IDs for band pack download
+  const chartStorageIds = useMemo(() => {
+    if (!items || !songs) return [];
+    const songMap = new Map((songs as any[]).map((s) => [s._id, s]));
+    const ids: string[] = [];
+    for (const item of items) {
+      const song = songMap.get(item.songId);
+      if (song?.chartFileId && !ids.includes(song.chartFileId)) {
+        ids.push(song.chartFileId);
+      }
+    }
+    return ids;
+  }, [items, songs]);
+  const chartUrls = useMultipleStorageUrls(chartStorageIds);
+
   const updateSetlist = useUpdateSetlist();
   const finaliseSetlist = useFinaliseSetlist();
   const removeSetlist = useRemoveSetlist();
@@ -105,7 +140,7 @@ export default function SetlistDetailPage() {
     );
   }
 
-  type Song = { _id: string; title: string; artist: string };
+  type Song = { _id: string; title: string; artist: string; vocalIntensity: number; energyLevel: number; chartFileId?: string };
   const songsById = new Map<string, Song>(songs.map((s: Song) => [s._id, s]));
 
   const openEdit = () => {
@@ -247,6 +282,31 @@ export default function SetlistDetailPage() {
           </Button>
         )}
       </div>
+
+      {/* Band Pack Download (members) */}
+      {isMember && (
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Package className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold">Band Pack</h3>
+                <p className="text-xs text-muted-foreground">Download setlist PDF + song charts as a ZIP</p>
+              </div>
+            </div>
+            <BandPackDownloadButton
+              setlist={setlist}
+              items={items}
+              songsById={songsById}
+              chartUrls={chartUrls}
+              options={{ showArtist: true, showIntensity: true, showEnergy: true }}
+              fileName={`${setlist.name.replace(/[^a-z0-9]/gi, "-")}-band-pack.zip`}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Notes */}
       {setlist.notes && (
