@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useBandBySlug, useCreateSetlist, useTemplatesList } from "@/lib/convex";
+import { useBandBySlug, useCreateSetlist, useCreateSetlistFromTemplate, useTemplatesList } from "@/lib/convex";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,8 +23,10 @@ export default function NewSetlistPage() {
   const band = useBandBySlug(bandSlug);
   const templates = useTemplatesList(band ? { bandId: band._id } : { bandId: "" });
   const createSetlist = useCreateSetlist();
+  const createFromTemplate = useCreateSetlistFromTemplate();
 
   const [name, setName] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [gigDate, setGigDate] = useState("");
   const [notes, setNotes] = useState("");
   const [setsConfig, setSetsConfig] = useState<SetConfig[]>([
@@ -33,6 +36,29 @@ export default function NewSetlistPage() {
   const [loading, setLoading] = useState(false);
 
   if (!band) return null;
+
+  const defaultConfig: SetConfig[] = [
+    { setIndex: 1, songsPerSet: 12 },
+    { setIndex: 2, songsPerSet: 12 }
+  ];
+
+  const handleTemplateChange = (value: string) => {
+    if (value === "none") {
+      setSelectedTemplateId("");
+      setSetsConfig(defaultConfig);
+      return;
+    }
+    setSelectedTemplateId(value);
+    const tmpl = templates?.find((t: any) => t._id === value);
+    if (tmpl) {
+      setSetsConfig(
+        tmpl.setsConfig.map((s: any) => ({
+          setIndex: s.setIndex,
+          songsPerSet: s.songsPerSet
+        }))
+      );
+    }
+  };
 
   const addSet = () => {
     const nextIndex = setsConfig.length + 1;
@@ -59,13 +85,20 @@ export default function NewSetlistPage() {
 
     setLoading(true);
     try {
-      const setlistId = await createSetlist({
-        bandId: band._id as any,
-        name: name.trim(),
-        gigDate: gigDate ? new Date(gigDate).getTime() : undefined,
-        setsConfig,
-        notes: notes.trim() || undefined
-      });
+      const setlistId = selectedTemplateId
+        ? await createFromTemplate({
+            bandId: band._id as any,
+            templateId: selectedTemplateId as any,
+            name: name.trim(),
+            gigDate: gigDate ? new Date(gigDate).getTime() : undefined
+          })
+        : await createSetlist({
+            bandId: band._id as any,
+            name: name.trim(),
+            gigDate: gigDate ? new Date(gigDate).getTime() : undefined,
+            setsConfig,
+            notes: notes.trim() || undefined
+          });
       toast.success("Setlist created");
       router.push(`/${bandSlug}/setlists/${setlistId}/builder`);
     } catch (e: any) {
@@ -106,13 +139,40 @@ export default function NewSetlistPage() {
           />
         </div>
 
+        {templates && templates.length > 0 && (
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Template (optional)</label>
+            <Select value={selectedTemplateId || "none"} onValueChange={handleTemplateChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Start from scratch" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Start from scratch</SelectItem>
+                {templates.map((tmpl: any) => {
+                  const setCount = tmpl.setsConfig.length;
+                  const songCounts = tmpl.setsConfig
+                    .map((s: any) => s.songsPerSet)
+                    .join("/");
+                  return (
+                    <SelectItem key={tmpl._id} value={tmpl._id}>
+                      {tmpl.name} — {setCount} {setCount === 1 ? "set" : "sets"}, {songCounts} songs
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">Sets Configuration</label>
-            <Button type="button" variant="outline" size="xs" onClick={addSet}>
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              Add Set
-            </Button>
+            {!selectedTemplateId && (
+              <Button type="button" variant="outline" size="xs" onClick={addSet}>
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Add Set
+              </Button>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -133,8 +193,9 @@ export default function NewSetlistPage() {
                       updateSetSongs(index, parseInt(e.target.value) || 12)
                     }
                     className="w-16 h-8"
+                    disabled={!!selectedTemplateId}
                   />
-                  {setsConfig.length > 1 && (
+                  {setsConfig.length > 1 && !selectedTemplateId && (
                     <Button
                       type="button"
                       variant="ghost"
@@ -148,6 +209,11 @@ export default function NewSetlistPage() {
               </div>
             ))}
           </div>
+          {selectedTemplateId && (
+            <p className="text-xs text-muted-foreground">
+              Sets configuration is defined by the template. Pinned songs will carry over to the builder.
+            </p>
+          )}
         </div>
 
         <div className="space-y-1.5">
