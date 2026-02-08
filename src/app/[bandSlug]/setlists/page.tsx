@@ -66,7 +66,7 @@ export default function SetlistsPage() {
           includeArchived: tab === "all",
           status: tab === "all" ? undefined : tab
         }
-      : { bandId: "" }
+      : null
   );
   const memberSetlists = useMemberSetlistsList(
     isMember ? memberToken : null

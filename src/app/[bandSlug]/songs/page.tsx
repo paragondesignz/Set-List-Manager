@@ -92,7 +92,7 @@ export default function SongsPage() {
   const adminSongs = useSongsList(
     !isMember && band
       ? { bandId: band._id, includeArchived: showArchived, search }
-      : { bandId: "" }
+      : null
   );
   const memberSongs = useMemberSongsList(
     isMember && memberToken ? { token: memberToken, search } : null

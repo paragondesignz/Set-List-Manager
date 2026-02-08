@@ -115,7 +115,7 @@ export default function TemplatesPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<Template | null>(null);
   const [useTemplate, setUseTemplate] = useState<Template | null>(null);
 
-  const templates = useTemplatesList(band ? { bandId: band._id } : { bandId: "" });
+  const templates = useTemplatesList(band ? { bandId: band._id } : null);
   const createTemplate = useCreateTemplate();
   const updateTemplate = useUpdateTemplate();
   const removeTemplate = useRemoveTemplate();

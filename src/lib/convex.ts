@@ -74,7 +74,8 @@ export function useSongsList(args: {
   maxVocalIntensity?: number;
   minEnergyLevel?: number;
   maxEnergyLevel?: number;
-}) {
+} | null) {
+  if (!args) return useQuery(q("songs:list"), "skip");
   return useQuery(q("songs:list"), args as any);
 }
 
@@ -119,7 +120,8 @@ export function useSetlistsList(args: {
   bandId: string;
   includeArchived?: boolean;
   status?: "draft" | "finalised" | "archived";
-}) {
+} | null) {
+  if (!args) return useQuery(q("setlists:list"), "skip");
   return useQuery(q("setlists:list"), args as any);
 }
 
@@ -204,7 +206,8 @@ export function useSwapSetlistSong() {
 export function useBandMembersList(args: {
   bandId: string;
   includeArchived?: boolean;
-}) {
+} | null) {
+  if (!args) return useQuery(q("bandMembers:list"), "skip");
   return useQuery(q("bandMembers:list"), args as any);
 }
 
@@ -246,7 +249,8 @@ export function useMemberByAccessToken(token: string | null) {
 // Templates
 // ============================================================================
 
-export function useTemplatesList(args: { bandId: string }) {
+export function useTemplatesList(args: { bandId: string } | null) {
+  if (!args) return useQuery(q("templates:list"), "skip");
   return useQuery(q("templates:list"), args as any);
 }
 

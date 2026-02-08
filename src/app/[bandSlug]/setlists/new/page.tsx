@@ -21,7 +21,7 @@ export default function NewSetlistPage() {
   const router = useRouter();
   const bandSlug = params.bandSlug as string;
   const band = useBandBySlug(bandSlug);
-  const templates = useTemplatesList(band ? { bandId: band._id } : { bandId: "" });
+  const templates = useTemplatesList(band ? { bandId: band._id } : null);
   const createSetlist = useCreateSetlist();
   const createFromTemplate = useCreateSetlistFromTemplate();
 

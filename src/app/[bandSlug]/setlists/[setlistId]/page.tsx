@@ -53,7 +53,7 @@ export default function SetlistDetailPage() {
   const adminSetlist = useSetlist(isMember ? null : setlistId);
   const adminItems = useSetlistItems(isMember ? null : setlistId);
   const adminSongs = useSongsList(
-    !isMember && band ? { bandId: band._id } : { bandId: "" }
+    !isMember && band ? { bandId: band._id } : null
   );
 
   // Member queries (skipped in admin mode)

@@ -23,8 +23,8 @@ export default function BandDashboardPage() {
   const params = useParams();
   const bandSlug = params.bandSlug as string;
   const band = useBandBySlug(bandSlug);
-  const songs = useSongsList(band ? { bandId: band._id } : { bandId: "" });
-  const setlists = useSetlistsList(band ? { bandId: band._id } : { bandId: "" });
+  const songs = useSongsList(band ? { bandId: band._id } : null);
+  const setlists = useSetlistsList(band ? { bandId: band._id } : null);
 
   if (!band) return null;
 

@@ -29,7 +29,7 @@ export default function BuilderPage() {
   const band = useBandBySlug(bandSlug);
   const setlist = useSetlist(setlistId);
   const items = useSetlistItems(setlistId);
-  const songs = useSongsList(band ? { bandId: band._id } : { bandId: "" });
+  const songs = useSongsList(band ? { bandId: band._id } : null);
   const updateSetlist = useUpdateSetlist();
 
   const handleDateChange = async (date: Date | undefined) => {

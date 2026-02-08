@@ -79,7 +79,7 @@ export default function ExportPage() {
   const band = useBandBySlug(bandSlug);
   const setlist = useSetlist(setlistId);
   const items = useSetlistItems(setlistId);
-  const songs = useSongsList(band ? { bandId: band._id } : { bandId: "" });
+  const songs = useSongsList(band ? { bandId: band._id } : null);
 
   const [showArtist, setShowArtist] = useState(true);
   const [showIntensity, setShowIntensity] = useState(true);

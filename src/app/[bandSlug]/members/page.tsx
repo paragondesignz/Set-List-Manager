@@ -75,7 +75,7 @@ export default function MembersPage() {
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
 
   const members = useBandMembersList(
-    band ? { bandId: band._id, includeArchived: showArchived } : { bandId: "" }
+    band ? { bandId: band._id, includeArchived: showArchived } : null
   );
   const createMember = useCreateBandMember();
   const archiveMember = useArchiveBandMember();
