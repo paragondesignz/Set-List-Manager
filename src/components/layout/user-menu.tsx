@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useCurrentUser } from "@/lib/convex";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Settings, LogOut } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ChevronDown, Settings, LogOut, Zap } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +46,7 @@ export function UserMenu() {
   const router = useRouter();
   const { signOut } = useAuthActions();
   const user = useCurrentUser();
+  const { isTrial } = useSubscription();
 
   const handleLogout = async () => {
     try {
@@ -66,10 +69,23 @@ export function UserMenu() {
           <span className="text-sm max-w-[120px] truncate hidden sm:inline">
             {user.name || user.email || "User"}
           </span>
+          {isTrial && (
+            <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 hidden sm:inline-flex">
+              Trial
+            </Badge>
+          )}
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
+        {isTrial && (
+          <DropdownMenuItem asChild>
+            <Link href="/subscribe" className="gap-2">
+              <Zap className="h-4 w-4" />
+              Subscribe
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <Link href="/settings" className="gap-2">
             <Settings className="h-4 w-4" />

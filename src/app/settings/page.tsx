@@ -200,7 +200,13 @@ function SubscriptionSection() {
           <Badge variant={config.variant}>{config.label}</Badge>
         </div>
 
-        {periodEnd && (isActive || status === "canceled") && (
+        {isTrial && (
+          <p className="text-sm text-muted-foreground">
+            Subscribe now to keep your setlists, songs, and templates when your trial ends.
+          </p>
+        )}
+
+        {periodEnd && (isActive || status === "canceled") && !isTrial && (
           <p className="text-sm text-muted-foreground">
             {status === "canceled"
               ? `Access until ${periodEnd}`
@@ -214,7 +220,7 @@ function SubscriptionSection() {
             {loading ? "Opening..." : "Manage Subscription"}
           </Button>
         ) : (
-          <Button asChild variant="outline">
+          <Button asChild variant={isTrial ? "default" : "outline"} className={isTrial ? "brand-gradient text-white hover:opacity-90" : ""}>
             <Link href="/subscribe">Subscribe</Link>
           </Button>
         )}
