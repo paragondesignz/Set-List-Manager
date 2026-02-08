@@ -64,16 +64,6 @@ async function verifyMemberCookie(cookie: string): Promise<{ token: string; memb
 export async function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
 
-  // Debug endpoint to test middleware
-  if (pathname === "/api/middleware-test") {
-    return NextResponse.json({
-      middlewareRan: true,
-      hasAuthToken: !!process.env.CLO_AUTH_TOKEN,
-      authTokenLength: process.env.CLO_AUTH_TOKEN?.length ?? 0,
-      trimmedLength: process.env.CLO_AUTH_TOKEN?.trim().length ?? 0,
-    });
-  }
-
   // Allow public / Next internals
   if (
     pathname.startsWith("/_next") ||
