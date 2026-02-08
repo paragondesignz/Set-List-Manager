@@ -34,7 +34,9 @@ import {
 import {
   generateSetlist,
   checkSetlistPacing,
-  type Song as GenSong
+  FLOW_PRESETS,
+  type Song as GenSong,
+  type FlowPreset
 } from "@/lib/generation-algorithm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,6 +91,7 @@ type Song = {
   artist: string;
   vocalIntensity: number;
   energyLevel: number;
+  tags: string[];
   playCount: number;
   lastPlayedAt?: number;
 };
@@ -721,7 +724,7 @@ export function SetlistBuilder({
     }
   };
 
-  const handleAutoGenerate = async () => {
+  const handleAutoGenerate = async (flowPreset: FlowPreset = "classic") => {
     // Clear first
     await handleClearAll();
 
@@ -733,12 +736,14 @@ export function SetlistBuilder({
         artist: s.artist,
         vocalIntensity: s.vocalIntensity,
         energyLevel: s.energyLevel,
+        tags: s.tags ?? [],
         playCount: s.playCount,
         lastPlayedAt: s.lastPlayedAt
       })),
       setsConfig,
       pinnedSlots: [],
-      excludedSongIds: []
+      excludedSongIds: [],
+      flowPreset
     });
 
     // Add songs
@@ -756,12 +761,13 @@ export function SetlistBuilder({
       }
     }
 
+    const presetName = FLOW_PRESETS[flowPreset].name;
     if (result.warnings.length > 0) {
-      toast.warning("Generated with warnings", {
+      toast.warning(`Generated with ${presetName}`, {
         description: result.warnings.join(", ")
       });
     } else {
-      toast.success("Setlist generated");
+      toast.success(`Generated with ${presetName}`);
     }
   };
 
@@ -969,10 +975,22 @@ export function SetlistBuilder({
                     Auto-generate
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => void handleAutoGenerate()}>
-                    Clear & generate all
-                  </DropdownMenuItem>
+                <DropdownMenuContent align="end" className="w-64">
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Select Flow Style
+                  </div>
+                  {(Object.keys(FLOW_PRESETS) as FlowPreset[]).map((preset) => (
+                    <DropdownMenuItem
+                      key={preset}
+                      onClick={() => void handleAutoGenerate(preset)}
+                      className="flex flex-col items-start gap-0.5"
+                    >
+                      <span className="font-medium">{FLOW_PRESETS[preset].name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {FLOW_PRESETS[preset].description}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button

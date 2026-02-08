@@ -35,9 +35,62 @@ import {
   Trash2,
   FileStack,
   Play,
-  Minus
+  Minus,
+  Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
+
+// Preset templates based on common gig formats
+const PRESET_TEMPLATES = [
+  {
+    id: "flare-bar",
+    name: "Flare Bar (Clo's Format)",
+    description: "3 sets: Jazz opener → Soul groove → Party finale",
+    setsConfig: [
+      { setIndex: 1, songsPerSet: 12, pinnedSlots: [] },
+      { setIndex: 2, songsPerSet: 10, pinnedSlots: [] },
+      { setIndex: 3, songsPerSet: 10, pinnedSlots: [] }
+    ]
+  },
+  {
+    id: "standard-2set",
+    name: "Standard 2-Set",
+    description: "Classic two-set format for shorter gigs",
+    setsConfig: [
+      { setIndex: 1, songsPerSet: 12, pinnedSlots: [] },
+      { setIndex: 2, songsPerSet: 12, pinnedSlots: [] }
+    ]
+  },
+  {
+    id: "corporate-3set",
+    name: "Corporate / Wedding",
+    description: "Background → Dinner → Dance floor",
+    setsConfig: [
+      { setIndex: 1, songsPerSet: 10, pinnedSlots: [] },
+      { setIndex: 2, songsPerSet: 10, pinnedSlots: [] },
+      { setIndex: 3, songsPerSet: 12, pinnedSlots: [] }
+    ]
+  },
+  {
+    id: "long-gig",
+    name: "Long Gig (4 Sets)",
+    description: "Extended format for all-night events",
+    setsConfig: [
+      { setIndex: 1, songsPerSet: 10, pinnedSlots: [] },
+      { setIndex: 2, songsPerSet: 10, pinnedSlots: [] },
+      { setIndex: 3, songsPerSet: 10, pinnedSlots: [] },
+      { setIndex: 4, songsPerSet: 10, pinnedSlots: [] }
+    ]
+  },
+  {
+    id: "short-gig",
+    name: "Short Set",
+    description: "Single set for opening acts or short bookings",
+    setsConfig: [
+      { setIndex: 1, songsPerSet: 10, pinnedSlots: [] }
+    ]
+  }
+];
 
 type SetConfig = {
   setIndex: number;
@@ -141,6 +194,43 @@ export default function TemplatesPage() {
         </Button>
       </div>
 
+      {/* Preset Templates */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <h2 className="font-medium text-sm">Quick Start Presets</h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {PRESET_TEMPLATES.map((preset) => {
+            const exists = templates?.some(t => t.name === preset.name);
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => !exists && handleCreate(preset.name, preset.setsConfig)}
+                disabled={exists}
+                className={`text-left p-4 rounded-lg border transition-all ${
+                  exists
+                    ? "bg-muted/50 opacity-60 cursor-not-allowed"
+                    : "bg-card hover:border-primary/50 hover:shadow-sm"
+                }`}
+              >
+                <div className="font-medium text-sm">{preset.name}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {preset.description}
+                </div>
+                <div className="text-xs text-muted-foreground mt-2">
+                  {preset.setsConfig.length} set{preset.setsConfig.length !== 1 ? "s" : ""} ({preset.setsConfig.map(s => s.songsPerSet).join(", ")} songs)
+                </div>
+                {exists && (
+                  <div className="text-xs text-primary mt-2">Already added</div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Templates List */}
       {templates === undefined ? (
         <div className="text-center py-12 text-muted-foreground">Loading...</div>
@@ -148,16 +238,21 @@ export default function TemplatesPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <FileStack className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">No templates yet</p>
+            <p className="text-muted-foreground mb-4">No custom templates yet</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Click a preset above or create your own
+            </p>
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Create your first template
+              Create Custom Template
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {templates.map((template) => (
+        <div className="space-y-3">
+          <h2 className="font-medium text-sm">Your Templates</h2>
+          <div className="grid gap-4">
+            {templates.map((template) => (
             <Card key={template._id}>
               <CardHeader className="flex flex-row items-start gap-4">
                 <div className="flex-1">
@@ -203,6 +298,7 @@ export default function TemplatesPage() {
               </CardHeader>
             </Card>
           ))}
+          </div>
         </div>
       )}
 
