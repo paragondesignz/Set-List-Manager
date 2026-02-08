@@ -43,9 +43,7 @@ export function Nav({ bandSlug }: NavProps) {
   return (
     <nav className="flex items-center gap-1">
       {links.map((link) => {
-        const isActive = link.exact
-          ? pathname === link.href
-          : pathname.startsWith(link.href);
+        const isActive = pathname.startsWith(link.href);
 
         return (
           <Link
