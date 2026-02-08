@@ -55,7 +55,7 @@ export default function DashboardPage() {
   if (bands.length > 1) {
     return (
       <div className="min-h-screen">
-        <header className="sticky top-0 z-50 border-b border-border bg-background">
+        <header className="border-b border-border bg-background">
           <div className="container mx-auto px-4 h-12 flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center">
               <Image src="/logo.webp" alt="Set List Creator" width={120} height={32} />
