@@ -13,6 +13,7 @@ import type * as auth from "../auth.js";
 import type * as bandMembers from "../bandMembers.js";
 import type * as bands from "../bands.js";
 import type * as http from "../http.js";
+import type * as memberAccess from "../memberAccess.js";
 import type * as setlistItems from "../setlistItems.js";
 import type * as setlists from "../setlists.js";
 import type * as songs from "../songs.js";
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   bandMembers: typeof bandMembers;
   bands: typeof bands;
   http: typeof http;
+  memberAccess: typeof memberAccess;
   setlistItems: typeof setlistItems;
   setlists: typeof setlists;
   songs: typeof songs;
