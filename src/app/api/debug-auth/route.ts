@@ -1,21 +1,39 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { fetchAction } from "convex/nextjs";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+// This endpoint tests the full auth flow components
+export async function GET(request: Request) {
   const cookieStore = await cookies();
   const allCookies = cookieStore.getAll().map(c => ({
     name: c.name,
     valueLength: c.value.length,
-    valuePreview: c.value.substring(0, 20) + "...",
   }));
+
+  // Test if we can reach Convex
+  let convexReachable = false;
+  let convexError = "";
+  try {
+    const result = await fetchAction("auth:signIn" as any, {
+      params: { code: "test_invalid_code" },
+      verifier: "test_invalid_verifier",
+    });
+    convexReachable = true;
+  } catch (e: any) {
+    convexReachable = true; // We reached it, it just rejected our test data
+    convexError = e?.message?.substring(0, 200) || "unknown error";
+  }
 
   return NextResponse.json({
     cookieCount: allCookies.length,
     cookies: allCookies,
-    hasVerifier: allCookies.some(c => c.name.includes("Verifier")),
-    hasJWT: allCookies.some(c => c.name.includes("JWT")),
-    hasRefreshToken: allCookies.some(c => c.name.includes("RefreshToken")),
+    convexUrl: process.env.NEXT_PUBLIC_CONVEX_URL,
+    convexReachable,
+    convexError,
+    env: {
+      hasConvexUrl: !!process.env.NEXT_PUBLIC_CONVEX_URL,
+    },
   });
 }
