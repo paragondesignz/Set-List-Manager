@@ -272,6 +272,35 @@ export function useCreateTemplateFromSetlist() {
 }
 
 // ============================================================================
+// Member Access (read-only, token-based)
+// ============================================================================
+
+export function useMemberSongsList(args: { token: string; search?: string } | null) {
+  if (!args) return useQuery(q("memberAccess:listSongs"), "skip");
+  return useQuery(q("memberAccess:listSongs"), args as any);
+}
+
+export function useMemberSong(token: string | null, songId: string | null) {
+  if (!token || !songId) return useQuery(q("memberAccess:getSong"), "skip");
+  return useQuery(q("memberAccess:getSong"), { token, songId } as any);
+}
+
+export function useMemberSetlistsList(token: string | null) {
+  if (!token) return useQuery(q("memberAccess:listSetlists"), "skip");
+  return useQuery(q("memberAccess:listSetlists"), { token } as any);
+}
+
+export function useMemberSetlist(token: string | null, setlistId: string | null) {
+  if (!token || !setlistId) return useQuery(q("memberAccess:getSetlist"), "skip");
+  return useQuery(q("memberAccess:getSetlist"), { token, setlistId } as any);
+}
+
+export function useMemberSetlistItems(token: string | null, setlistId: string | null) {
+  if (!token || !setlistId) return useQuery(q("memberAccess:getSetlistItems"), "skip");
+  return useQuery(q("memberAccess:getSetlistItems"), { token, setlistId } as any);
+}
+
+// ============================================================================
 // Storage
 // ============================================================================
 

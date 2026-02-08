@@ -4,6 +4,7 @@ import { ConvexAuthNextjsProvider } from "@convex-dev/auth/nextjs";
 import { ConvexReactClient } from "convex/react";
 import { ReactNode, useState } from "react";
 import { Toaster } from "sonner";
+import { MemberAuthProvider } from "@/hooks/useMemberAuth";
 
 // Use a placeholder URL for build time when env var is not set
 const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL || "https://placeholder.convex.cloud";
@@ -20,7 +21,9 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <ConvexAuthNextjsProvider client={convex}>
-      {children}
+      <MemberAuthProvider>
+        {children}
+      </MemberAuthProvider>
       <Toaster
         position="bottom-right"
         toastOptions={{

@@ -6,10 +6,12 @@ import Link from "next/link";
 import {
   useBandBySlug,
   useSongsList,
+  useMemberSongsList,
   useArchiveSong,
   useBulkArchiveSongs,
   useBulkImportSongs
 } from "@/lib/convex";
+import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { CSVImport } from "@/components/songs/csv-import";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,7 +72,8 @@ type SortDir = "asc" | "desc";
 export default function SongsPage() {
   const params = useParams();
   const bandSlug = params.bandSlug as string;
-  const band = useBandBySlug(bandSlug);
+  const { isMember, token: memberToken } = useMemberAuth();
+  const band = useBandBySlug(isMember ? null : bandSlug);
 
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
@@ -85,11 +88,17 @@ export default function SongsPage() {
   const [sortField, setSortField] = useState<SortField>("title");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
-  const songs = useSongsList(
-    band
+  // Use member query or admin query depending on auth mode
+  const adminSongs = useSongsList(
+    !isMember && band
       ? { bandId: band._id, includeArchived: showArchived, search }
       : { bandId: "" }
   );
+  const memberSongs = useMemberSongsList(
+    isMember && memberToken ? { token: memberToken, search } : null
+  );
+  const songs = isMember ? memberSongs : adminSongs;
+
   const archiveSong = useArchiveSong();
   const bulkArchive = useBulkArchiveSongs();
   const bulkImportSongs = useBulkImportSongs();
@@ -131,7 +140,7 @@ export default function SongsPage() {
     return result;
   }, [songs, vocalFilter, energyFilter, sortField, sortDir]);
 
-  if (!band) return null;
+  if (!isMember && !band) return null;
 
   // Pagination
   const totalSongs = filteredAndSortedSongs.length;
@@ -241,27 +250,29 @@ export default function SongsPage() {
             {hasActiveFilters && songs && ` (${songs.length} total)`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <CSVImport
-            onImport={async (parsedSongs) => {
-              return await bulkImportSongs({
-                bandId: band._id as any,
-                songs: parsedSongs.map((s) => ({
-                  title: s.title,
-                  artist: s.artist,
-                  vocalIntensity: s.vocalIntensity,
-                  energyLevel: s.energyLevel
-                }))
-              });
-            }}
-          />
-          <Button asChild size="sm">
-            <Link href={`/${bandSlug}/songs/new`}>
-              <Plus className="h-4 w-4 mr-1.5" />
-              Add Song
-            </Link>
-          </Button>
-        </div>
+        {!isMember && (
+          <div className="flex items-center gap-2">
+            <CSVImport
+              onImport={async (parsedSongs) => {
+                return await bulkImportSongs({
+                  bandId: band!._id as any,
+                  songs: parsedSongs.map((s) => ({
+                    title: s.title,
+                    artist: s.artist,
+                    vocalIntensity: s.vocalIntensity,
+                    energyLevel: s.energyLevel
+                  }))
+                });
+              }}
+            />
+            <Button asChild size="sm">
+              <Link href={`/${bandSlug}/songs/new`}>
+                <Plus className="h-4 w-4 mr-1.5" />
+                Add Song
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -311,14 +322,16 @@ export default function SongsPage() {
           </Button>
         )}
 
-        <div className="flex items-center gap-2 ml-auto">
-          <Switch checked={showArchived} onCheckedChange={setShowArchived} />
-          <span className="text-sm text-muted-foreground">Archived</span>
-        </div>
+        {!isMember && (
+          <div className="flex items-center gap-2 ml-auto">
+            <Switch checked={showArchived} onCheckedChange={setShowArchived} />
+            <span className="text-sm text-muted-foreground">Archived</span>
+          </div>
+        )}
       </div>
 
-      {/* Bulk Actions */}
-      {selectedIds.size > 0 && (
+      {/* Bulk Actions (admin only) */}
+      {!isMember && selectedIds.size > 0 && (
         <div className="flex items-center gap-2 p-2.5 rounded-xl glass-subtle border border-white/50 shadow-sm animate-slide-up">
           <span className="text-sm font-medium">
             {selectedIds.size} selected
@@ -343,12 +356,14 @@ export default function SongsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10">
-                <Checkbox
-                  checked={allPageSelected}
-                  onCheckedChange={toggleSelectAll}
-                />
-              </TableHead>
+              {!isMember && (
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allPageSelected}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
+              )}
               <TableHead>
                 <button
                   className="flex items-center gap-1 hover:text-foreground"
@@ -382,19 +397,19 @@ export default function SongsPage() {
                   )}
                 </button>
               </TableHead>
-              <TableHead className="w-10"></TableHead>
+              {!isMember && <TableHead className="w-10"></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {songs === undefined ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={isMember ? 3 : 5} className="text-center py-8">
                   <span className="text-muted-foreground">Loading...</span>
                 </TableCell>
               </TableRow>
             ) : paginatedSongs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={isMember ? 3 : 5} className="text-center py-8">
                   <span className="text-muted-foreground">No songs found</span>
                 </TableCell>
               </TableRow>
@@ -404,20 +419,28 @@ export default function SongsPage() {
                   key={song._id}
                   className={song.archivedAt ? "opacity-50" : ""}
                 >
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedIds.has(song._id)}
-                      onCheckedChange={() => toggleSelect(song._id)}
-                    />
-                  </TableCell>
+                  {!isMember && (
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(song._id)}
+                        onCheckedChange={() => toggleSelect(song._id)}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell>
                     <div className="min-w-0">
-                      <Link
-                        href={`/${bandSlug}/songs/${song._id}`}
-                        className="font-medium hover:text-primary transition-colors block truncate"
-                      >
-                        {song.title}
-                      </Link>
+                      {isMember ? (
+                        <span className="font-medium block truncate">
+                          {song.title}
+                        </span>
+                      ) : (
+                        <Link
+                          href={`/${bandSlug}/songs/${song._id}`}
+                          className="font-medium hover:text-primary transition-colors block truncate"
+                        >
+                          {song.title}
+                        </Link>
+                      )}
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <span className="truncate">{song.artist}</span>
                         {song.chartFileId && (
@@ -445,41 +468,43 @@ export default function SongsPage() {
                       {ENERGY_LEVEL_SHORT[song.energyLevel]}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon-xs">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/${bandSlug}/songs/${song._id}`}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleArchive(song._id, !song.archivedAt)
-                          }
-                        >
-                          {song.archivedAt ? (
-                            <>
-                              <ArchiveRestore className="h-4 w-4 mr-2" />
-                              Restore
-                            </>
-                          ) : (
-                            <>
-                              <Archive className="h-4 w-4 mr-2" />
-                              Archive
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+                  {!isMember && (
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon-xs">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link href={`/${bandSlug}/songs/${song._id}`}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleArchive(song._id, !song.archivedAt)
+                            }
+                          >
+                            {song.archivedAt ? (
+                              <>
+                                <ArchiveRestore className="h-4 w-4 mr-2" />
+                                Restore
+                              </>
+                            ) : (
+                              <>
+                                <Archive className="h-4 w-4 mr-2" />
+                                Archive
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

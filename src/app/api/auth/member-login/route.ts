@@ -78,6 +78,18 @@ export async function POST(req: Request) {
       maxAge: 60 * 60 * 24 * 90 // 90 days
     });
 
+    // Also set a client-readable cookie with just the token
+    // so React components can query Convex for member data
+    res.cookies.set({
+      name: "clo_member_token",
+      value: token,
+      httpOnly: false,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 90 // 90 days
+    });
+
     return res;
   } catch (e: any) {
     console.error("Member login error:", e);

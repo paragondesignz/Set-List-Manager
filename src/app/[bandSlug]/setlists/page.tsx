@@ -6,9 +6,11 @@ import Link from "next/link";
 import {
   useBandBySlug,
   useSetlistsList,
+  useMemberSetlistsList,
   useArchiveSetlist,
   useDuplicateSetlist
 } from "@/lib/convex";
+import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -47,7 +49,8 @@ export default function SetlistsPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const bandSlug = params.bandSlug as string;
-  const band = useBandBySlug(bandSlug);
+  const { isMember, token: memberToken } = useMemberAuth();
+  const band = useBandBySlug(isMember ? null : bandSlug);
 
   // Read initial tab from URL param if present
   const statusParam = searchParams.get("status");
@@ -55,8 +58,9 @@ export default function SetlistsPage() {
   const [tab, setTab] = useState<"draft" | "finalised" | "all">(initialTab);
   const [page, setPage] = useState(0);
 
-  const setlists = useSetlistsList(
-    band
+  // Use member query or admin query depending on auth mode
+  const adminSetlists = useSetlistsList(
+    !isMember && band
       ? {
           bandId: band._id,
           includeArchived: tab === "all",
@@ -64,11 +68,16 @@ export default function SetlistsPage() {
         }
       : { bandId: "" }
   );
+  const memberSetlists = useMemberSetlistsList(
+    isMember ? memberToken : null
+  );
+  // Members only see finalised setlists (no tabs)
+  const setlists = isMember ? memberSetlists : adminSetlists;
 
   const archiveSetlist = useArchiveSetlist();
   const duplicateSetlist = useDuplicateSetlist();
 
-  if (!band) return null;
+  if (!isMember && !band) return null;
 
   // Pagination
   const totalSetlists = setlists?.length ?? 0;
@@ -144,7 +153,7 @@ export default function SetlistsPage() {
               <TableHead className="w-28">Date</TableHead>
               <TableHead className="w-20 text-center">Sets</TableHead>
               <TableHead className="w-24">Status</TableHead>
-              <TableHead className="w-10"></TableHead>
+              {!isMember && <TableHead className="w-10"></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -177,51 +186,53 @@ export default function SetlistsPage() {
                 <TableCell>
                   {statusBadge(setlist.status, setlist.archivedAt)}
                 </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon-xs">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/${bandSlug}/setlists/${setlist._id}`}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          View / Edit
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/${bandSlug}/setlists/${setlist._id}/builder`}>
-                          <ListMusic className="h-4 w-4 mr-2" />
-                          Open Builder
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDuplicate(setlist._id)}>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleArchive(setlist._id, !setlist.archivedAt)
-                        }
-                      >
-                        {setlist.archivedAt ? (
-                          <>
-                            <ArchiveRestore className="h-4 w-4 mr-2" />
-                            Restore
-                          </>
-                        ) : (
-                          <>
-                            <Archive className="h-4 w-4 mr-2" />
-                            Archive
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                {!isMember && (
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon-xs">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/${bandSlug}/setlists/${setlist._id}`}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            View / Edit
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/${bandSlug}/setlists/${setlist._id}/builder`}>
+                            <ListMusic className="h-4 w-4 mr-2" />
+                            Open Builder
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDuplicate(setlist._id)}>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleArchive(setlist._id, !setlist.archivedAt)
+                          }
+                        >
+                          {setlist.archivedAt ? (
+                            <>
+                              <ArchiveRestore className="h-4 w-4 mr-2" />
+                              Restore
+                            </>
+                          ) : (
+                            <>
+                              <Archive className="h-4 w-4 mr-2" />
+                              Archive
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
@@ -272,25 +283,31 @@ export default function SetlistsPage() {
             {totalSetlists} setlist{totalSetlists !== 1 ? "s" : ""}
           </p>
         </div>
-        <Button asChild size="sm">
-          <Link href={`/${bandSlug}/setlists/new`}>
-            <Plus className="h-4 w-4 mr-1.5" />
-            New Setlist
-          </Link>
-        </Button>
+        {!isMember && (
+          <Button asChild size="sm">
+            <Link href={`/${bandSlug}/setlists/new`}>
+              <Plus className="h-4 w-4 mr-1.5" />
+              New Setlist
+            </Link>
+          </Button>
+        )}
       </div>
 
-      {/* Tabs */}
-      <Tabs value={tab} onValueChange={handleTabChange}>
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="draft">Drafts</TabsTrigger>
-          <TabsTrigger value="finalised">Finalised</TabsTrigger>
-        </TabsList>
-        <TabsContent value={tab} className="mt-4">
-          {renderSetlists()}
-        </TabsContent>
-      </Tabs>
+      {/* Tabs (admin only — members only see finalised) */}
+      {isMember ? (
+        <div>{renderSetlists()}</div>
+      ) : (
+        <Tabs value={tab} onValueChange={handleTabChange}>
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="draft">Drafts</TabsTrigger>
+            <TabsTrigger value="finalised">Finalised</TabsTrigger>
+          </TabsList>
+          <TabsContent value={tab} className="mt-4">
+            {renderSetlists()}
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }

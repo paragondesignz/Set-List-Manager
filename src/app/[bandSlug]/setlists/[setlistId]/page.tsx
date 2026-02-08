@@ -8,10 +8,14 @@ import {
   useSetlist,
   useSetlistItems,
   useSongsList,
+  useMemberSetlist,
+  useMemberSetlistItems,
+  useMemberSongsList,
   useUpdateSetlist,
   useFinaliseSetlist,
   useRemoveSetlist
 } from "@/lib/convex";
+import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,11 +46,33 @@ export default function SetlistDetailPage() {
   const router = useRouter();
   const bandSlug = params.bandSlug as string;
   const setlistId = params.setlistId as string;
+  const { isMember, token: memberToken } = useMemberAuth();
 
-  const band = useBandBySlug(bandSlug);
-  const setlist = useSetlist(setlistId);
-  const items = useSetlistItems(setlistId);
-  const songs = useSongsList(band ? { bandId: band._id } : { bandId: "" });
+  // Admin queries (skipped in member mode)
+  const band = useBandBySlug(isMember ? null : bandSlug);
+  const adminSetlist = useSetlist(isMember ? null : setlistId);
+  const adminItems = useSetlistItems(isMember ? null : setlistId);
+  const adminSongs = useSongsList(
+    !isMember && band ? { bandId: band._id } : { bandId: "" }
+  );
+
+  // Member queries (skipped in admin mode)
+  const memberSetlist = useMemberSetlist(
+    isMember ? memberToken : null,
+    isMember ? setlistId : null
+  );
+  const memberItems = useMemberSetlistItems(
+    isMember ? memberToken : null,
+    isMember ? setlistId : null
+  );
+  const memberSongs = useMemberSongsList(
+    isMember && memberToken ? { token: memberToken } : null
+  );
+
+  // Use the correct data source
+  const setlist = isMember ? memberSetlist : adminSetlist;
+  const items = isMember ? memberItems : adminItems;
+  const songs = isMember ? memberSongs : adminSongs;
 
   const updateSetlist = useUpdateSetlist();
   const finaliseSetlist = useFinaliseSetlist();
@@ -61,7 +87,7 @@ export default function SetlistDetailPage() {
   const [editNotes, setEditNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
-  if (!band) return null;
+  if (!isMember && !band) return null;
 
   if (setlist === undefined || items === undefined || songs === undefined) {
     return (
@@ -180,43 +206,47 @@ export default function SetlistDetailPage() {
             </p>
           )}
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={openEdit}>
-            <Pencil className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-          <Button asChild size="sm">
-            <Link href={`/${bandSlug}/setlists/${setlistId}/builder`}>
-              <ListMusic className="h-4 w-4 mr-2" />
-              Builder
-            </Link>
-          </Button>
-        </div>
+        {!isMember && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={openEdit}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button asChild size="sm">
+              <Link href={`/${bandSlug}/setlists/${setlistId}/builder`}>
+                <ListMusic className="h-4 w-4 mr-2" />
+                Builder
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Actions */}
-      <div className="flex flex-wrap gap-2">
-        {setlist.status === "draft" && (
-          <Button variant="outline" onClick={() => setFinaliseOpen(true)}>
-            <Check className="h-4 w-4 mr-2" />
-            Mark as Finalised
+      {/* Actions (admin only) */}
+      {!isMember && (
+        <div className="flex flex-wrap gap-2">
+          {setlist.status === "draft" && (
+            <Button variant="outline" onClick={() => setFinaliseOpen(true)}>
+              <Check className="h-4 w-4 mr-2" />
+              Mark as Finalised
+            </Button>
+          )}
+          <Button variant="outline" asChild>
+            <Link href={`/${bandSlug}/setlists/${setlistId}/export`}>
+              <FileDown className="h-4 w-4 mr-2" />
+              Export
+            </Link>
           </Button>
-        )}
-        <Button variant="outline" asChild>
-          <Link href={`/${bandSlug}/setlists/${setlistId}/export`}>
-            <FileDown className="h-4 w-4 mr-2" />
-            Export
-          </Link>
-        </Button>
-        <Button
-          variant="outline"
-          className="text-destructive"
-          onClick={() => setDeleteOpen(true)}
-        >
-          <Trash2 className="h-4 w-4 mr-2" />
-          Delete
-        </Button>
-      </div>
+          <Button
+            variant="outline"
+            className="text-destructive"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        </div>
+      )}
 
       {/* Notes */}
       {setlist.notes && (
@@ -281,87 +311,92 @@ export default function SetlistDetailPage() {
           })}
       </div>
 
-      {/* Edit Dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Setlist</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Name</label>
-              <Input
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Gig Date</label>
-              <Input
-                type="date"
-                value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Notes</label>
-              <Textarea
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveEdit} disabled={saving}>
-              {saving ? "Saving..." : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Admin-only dialogs */}
+      {!isMember && (
+        <>
+          {/* Edit Dialog */}
+          <Dialog open={editOpen} onOpenChange={setEditOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Setlist</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Name</label>
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Gig Date</label>
+                  <Input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Notes</label>
+                  <Textarea
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEdit} disabled={saving}>
+                  {saving ? "Saving..." : "Save"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-      {/* Finalise Dialog */}
-      <Dialog open={finaliseOpen} onOpenChange={setFinaliseOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Finalise Setlist</DialogTitle>
-            <DialogDescription>
-              Marking as finalised will update play counts for all songs in this
-              setlist. This indicates the gig has been performed.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setFinaliseOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleFinalise}>Finalise</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          {/* Finalise Dialog */}
+          <Dialog open={finaliseOpen} onOpenChange={setFinaliseOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Finalise Setlist</DialogTitle>
+                <DialogDescription>
+                  Marking as finalised will update play counts for all songs in this
+                  setlist. This indicates the gig has been performed.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setFinaliseOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleFinalise}>Finalise</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-      {/* Delete Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Setlist</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete &quot;{setlist.name}&quot;? This
-              action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          {/* Delete Dialog */}
+          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Setlist</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete &quot;{setlist.name}&quot;? This
+                  action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={handleDelete}>
+                  Delete
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
     </div>
   );
 }
