@@ -54,7 +54,9 @@ export function UserMenu() {
     } catch (e) {
       console.error("Sign out error:", e);
     }
-    router.push("/login");
+    // Hard navigate to landing page to avoid React re-renders
+    // triggering subscription redirect to /subscribe
+    window.location.href = "/";
   };
 
   if (!user) {

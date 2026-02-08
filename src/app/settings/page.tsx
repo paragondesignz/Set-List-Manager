@@ -397,7 +397,7 @@ function AccountSection() {
     } catch (e) {
       console.error("Sign out error:", e);
     }
-    router.push("/login");
+    window.location.href = "/";
   };
 
   const handleDelete = async () => {
@@ -418,7 +418,7 @@ function AccountSection() {
 
       await deleteAccount();
       await signOut();
-      router.push("/login");
+      window.location.href = "/";
     } catch (e: any) {
       toast.error(e.message || "Failed to delete account");
       setDeleting(false);
