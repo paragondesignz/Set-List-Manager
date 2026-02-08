@@ -29,7 +29,7 @@ export const list = query({
       .collect();
 
     return members
-      .filter((m) => (includeArchived ? m.archivedAt !== undefined : m.archivedAt === undefined))
+      .filter((m) => includeArchived || m.archivedAt === undefined)
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 });
