@@ -39,7 +39,6 @@ export async function POST(req: Request) {
         },
       ],
       subscription_data: {
-        trial_period_days: 14,
         metadata: { userId },
       },
       customer_email: email || undefined,

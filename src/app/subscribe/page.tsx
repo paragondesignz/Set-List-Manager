@@ -141,9 +141,7 @@ export default function SubscribePage() {
           </Button>
 
           <p className="text-xs text-muted-foreground text-center mt-3">
-            {isTrial
-              ? "You won't be charged until your trial ends. Cancel anytime."
-              : "14-day free trial included. Cancel anytime."}
+            Cancel anytime. No lock-in contracts.
           </p>
         </div>
 

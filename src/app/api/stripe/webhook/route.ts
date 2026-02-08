@@ -53,11 +53,25 @@ export async function POST(req: Request) {
               ? session.customer
               : (session.customer as any)?.id;
 
+          // Fetch the subscription to get the real status and period end
+          let subscriptionStatus = "active";
+          let currentPeriodEnd: number | undefined;
+          if (subscriptionId) {
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            subscriptionStatus = sub.status;
+            const periodEnd = (sub as any).current_period_end
+              ?? sub.items?.data?.[0]?.current_period_end;
+            if (periodEnd) {
+              currentPeriodEnd = periodEnd * 1000;
+            }
+          }
+
           await convex.mutation("users:updateSubscription" as any, {
             userId,
             stripeCustomerId: customerId || undefined,
             stripeSubscriptionId: subscriptionId || undefined,
-            subscriptionStatus: "trialing",
+            subscriptionStatus,
+            currentPeriodEnd,
           });
         }
         break;
