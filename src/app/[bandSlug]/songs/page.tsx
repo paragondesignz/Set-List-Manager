@@ -429,18 +429,12 @@ export default function SongsPage() {
                   )}
                   <TableCell>
                     <div className="min-w-0">
-                      {isMember ? (
-                        <span className="font-medium block truncate">
-                          {song.title}
-                        </span>
-                      ) : (
-                        <Link
-                          href={`/${bandSlug}/songs/${song._id}`}
-                          className="font-medium hover:text-primary transition-colors block truncate"
-                        >
-                          {song.title}
-                        </Link>
-                      )}
+                      <Link
+                        href={`/${bandSlug}/songs/${song._id}`}
+                        className="font-medium hover:text-primary transition-colors block truncate"
+                      >
+                        {song.title}
+                      </Link>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <span className="truncate">{song.artist}</span>
                         {song.chartFileId && (

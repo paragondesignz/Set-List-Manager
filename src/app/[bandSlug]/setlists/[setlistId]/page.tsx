@@ -222,21 +222,21 @@ export default function SetlistDetailPage() {
         )}
       </div>
 
-      {/* Actions (admin only) */}
-      {!isMember && (
-        <div className="flex flex-wrap gap-2">
-          {setlist.status === "draft" && (
-            <Button variant="outline" onClick={() => setFinaliseOpen(true)}>
-              <Check className="h-4 w-4 mr-2" />
-              Mark as Finalised
-            </Button>
-          )}
-          <Button variant="outline" asChild>
-            <Link href={`/${bandSlug}/setlists/${setlistId}/export`}>
-              <FileDown className="h-4 w-4 mr-2" />
-              Export
-            </Link>
+      {/* Actions */}
+      <div className="flex flex-wrap gap-2">
+        {!isMember && setlist.status === "draft" && (
+          <Button variant="outline" onClick={() => setFinaliseOpen(true)}>
+            <Check className="h-4 w-4 mr-2" />
+            Mark as Finalised
           </Button>
+        )}
+        <Button variant="outline" asChild>
+          <Link href={`/${bandSlug}/setlists/${setlistId}/export`}>
+            <FileDown className="h-4 w-4 mr-2" />
+            Export
+          </Link>
+        </Button>
+        {!isMember && (
           <Button
             variant="outline"
             className="text-destructive"
@@ -245,8 +245,8 @@ export default function SetlistDetailPage() {
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Notes */}
       {setlist.notes && (

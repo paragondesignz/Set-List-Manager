@@ -9,8 +9,12 @@ import {
   useSetlist,
   useSetlistItems,
   useSongsList,
+  useMemberSetlist,
+  useMemberSetlistItems,
+  useMemberSongsList,
   useMultipleStorageUrls
 } from "@/lib/convex";
+import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -75,11 +79,31 @@ export default function ExportPage() {
   const params = useParams();
   const bandSlug = params.bandSlug as string;
   const setlistId = params.setlistId as string;
+  const { isMember, token: memberToken } = useMemberAuth();
 
-  const band = useBandBySlug(bandSlug);
-  const setlist = useSetlist(setlistId);
-  const items = useSetlistItems(setlistId);
-  const songs = useSongsList(band ? { bandId: band._id } : null);
+  // Admin queries (skipped in member mode)
+  const band = useBandBySlug(isMember ? null : bandSlug);
+  const adminSetlist = useSetlist(isMember ? null : setlistId);
+  const adminItems = useSetlistItems(isMember ? null : setlistId);
+  const adminSongs = useSongsList(!isMember && band ? { bandId: band._id } : null);
+
+  // Member queries (skipped in admin mode)
+  const memberSetlist = useMemberSetlist(
+    isMember ? memberToken : null,
+    isMember ? setlistId : null
+  );
+  const memberItems = useMemberSetlistItems(
+    isMember ? memberToken : null,
+    isMember ? setlistId : null
+  );
+  const memberSongs = useMemberSongsList(
+    isMember && memberToken ? { token: memberToken } : null
+  );
+
+  // Use the correct data source
+  const setlist = isMember ? memberSetlist : adminSetlist;
+  const items = isMember ? memberItems : adminItems;
+  const songs = isMember ? memberSongs : adminSongs;
 
   const [showArtist, setShowArtist] = useState(true);
   const [showIntensity, setShowIntensity] = useState(true);
@@ -105,7 +129,7 @@ export default function ExportPage() {
     setMounted(true);
   }, []);
 
-  if (!band) return null;
+  if (!isMember && !band) return null;
 
   if (setlist === undefined || items === undefined || songs === undefined) {
     return (

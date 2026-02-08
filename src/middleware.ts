@@ -82,16 +82,30 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
     // Allow exact matches (song list, setlist list)
     const isExactMatch = memberAllowedRoutes.includes(pathname);
 
-    // Allow setlist detail pages: /{bandSlug}/setlists/{setlistId}
-    // but NOT sub-routes like /builder, /export, /new
-    const setlistDetailPattern = new RegExp(
-      `^${bandPrefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/setlists/[^/]+$`
+    const escapedPrefix = bandPrefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    // Allow song detail pages: /{bandSlug}/songs/{songId}
+    // but NOT sub-routes like /new
+    const songDetailPattern = new RegExp(
+      `^${escapedPrefix}/songs/[^/]+$`
     );
-    const isSetlistDetail =
-      setlistDetailPattern.test(pathname) &&
+    const isSongDetail =
+      songDetailPattern.test(pathname) &&
       !pathname.endsWith("/new");
 
-    if (!isExactMatch && !isSetlistDetail) {
+    // Allow setlist detail pages: /{bandSlug}/setlists/{setlistId}
+    // and export sub-route, but NOT /builder or /new
+    const setlistDetailPattern = new RegExp(
+      `^${escapedPrefix}/setlists/[^/]+$`
+    );
+    const setlistExportPattern = new RegExp(
+      `^${escapedPrefix}/setlists/[^/]+/export$`
+    );
+    const isSetlistDetail =
+      (setlistDetailPattern.test(pathname) || setlistExportPattern.test(pathname)) &&
+      !pathname.endsWith("/new");
+
+    if (!isExactMatch && !isSongDetail && !isSetlistDetail) {
       return nextjsMiddlewareRedirect(
         request,
         `${bandPrefix}/songs`
