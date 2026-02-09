@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, usePathname, notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useBandBySlug, useBandsList } from "@/lib/convex";
+import { useBandBySlug } from "@/lib/convex";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { Header } from "@/components/layout/header";
@@ -105,7 +105,6 @@ export default function BandLayout({
 
   // Admin data (skip queries when in member mode to avoid auth failures)
   const band = useBandBySlug(isMember ? null : bandSlug);
-  const bands = useBandsList();
   const { isLoading: subLoading, isExpired, isTrial, daysLeft } = useSubscription();
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
@@ -158,7 +157,7 @@ export default function BandLayout({
   // ── Admin mode ──
 
   // Loading state
-  if (band === undefined || bands === undefined || subLoading) {
+  if (band === undefined || subLoading) {
     return (
       <div className="min-h-screen">
         <Header />
@@ -180,7 +179,7 @@ export default function BandLayout({
 
   return (
     <div className="min-h-screen">
-      <Header band={band} bands={bands} />
+      <Header band={band} />
       {isTrial && !bannerDismissed && (
         <div
           className={`border-b text-xs px-4 py-1.5 flex items-center justify-center gap-2 ${
