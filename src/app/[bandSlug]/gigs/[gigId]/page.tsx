@@ -815,11 +815,11 @@ export default function GigDetailPage() {
                 </p>
               )}
               {gig.venueAddress && (
-                <div className="mt-3">
+                <div className="mt-3 aspect-square">
                   <iframe
                     src={`https://maps.google.com/maps?q=${encodeURIComponent(gig.venueAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                     width="100%"
-                    height="200"
+                    height="100%"
                     style={{ border: 0 }}
                     className="rounded-md"
                     allowFullScreen
