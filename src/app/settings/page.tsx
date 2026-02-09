@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useAuthActions } from "@convex-dev/auth/react";
 import {
   useCurrentUser,
-  useAuthProvider,
+
   useUpdateProfile,
   useDeleteAccount,
   useChangePassword,
@@ -38,7 +38,6 @@ import { UserMenu } from "@/components/layout/user-menu";
 
 function ProfileSection() {
   const user = useCurrentUser();
-  const providers = useAuthProvider();
   const updateProfile = useUpdateProfile();
   const [name, setName] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -48,11 +47,7 @@ function ProfileSection() {
   const currentName = name ?? user.name ?? "";
   const hasChanged = currentName !== (user.name ?? "");
 
-  const providerLabel = providers?.includes("google")
-    ? "Google"
-    : providers?.includes("password")
-      ? "Email & Password"
-      : "Unknown";
+  const providerLabel = "Email & Password";
 
   const handleSave = async () => {
     if (!hasChanged || !currentName.trim()) return;
@@ -270,32 +265,12 @@ function SubscriptionSection() {
 // ============================================================================
 
 function PasswordSection() {
-  const providers = useAuthProvider();
   const changePassword = useChangePassword();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-
-  if (providers === undefined) return null;
-
-  const hasPassword = providers?.includes("password");
-
-  if (!hasPassword) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Password</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            You signed in with Google. Password management is not available for Google accounts.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   const handleChangePassword = async () => {
     setError("");

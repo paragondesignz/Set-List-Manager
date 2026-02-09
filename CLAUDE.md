@@ -26,7 +26,7 @@ Run both `npm run dev` and `npx convex dev` in parallel for local development.
 ### Stack
 - **Frontend**: Next.js 16 (App Router), React 19, Tailwind CSS 4
 - **Backend**: Convex (serverless database + real-time functions)
-- **Auth**: Convex Auth (`@convex-dev/auth`) — Email/Password + Google OAuth
+- **Auth**: Convex Auth (`@convex-dev/auth`) — Email/Password
 - **Payments**: Stripe ($7.95 NZD/month subscription with 14-day free trial)
 - **UI Components**: shadcn/ui (Radix UI primitives)
 - **Drag & Drop**: @dnd-kit for setlist builder
@@ -70,7 +70,7 @@ export function useSongsList(args) {
 
 ### Route Structure
 - `/` - Public landing page (with pricing section)
-- `/login` - Email/password + Google OAuth sign-in/sign-up
+- `/login` - Email/password sign-in/sign-up
 - `/subscribe` - Subscription paywall (shown when trial expires)
 - `/dashboard` - Band selector or redirect to active band
 - `/bands` - Manage bands
@@ -88,8 +88,8 @@ export function useSongsList(args) {
 - `/member-login` - Band member access (separate flow, cookie-based)
 
 ### Authentication
-- **Primary auth**: Convex Auth (email/password + Google OAuth via `@convex-dev/auth`)
-- **Providers**: `convex/auth.ts` configures Google and Password providers
+- **Primary auth**: Convex Auth (email/password via `@convex-dev/auth`)
+- **Providers**: `convex/auth.ts` configures the Password provider
 - **Middleware**: `src/middleware.ts` uses `convexAuthNextjsMiddleware` to protect routes
 - **Layout**: Root layout wraps with `ConvexAuthNextjsServerProvider`, providers.tsx uses `ConvexAuthNextjsProvider`
 - **Band member auth**: Separate cookie-based flow (`clo_member_auth`) for read-only band member access
@@ -119,8 +119,6 @@ export function useSongsList(args) {
 
 ### Convex env (set via `npx convex env set`)
 - `SITE_URL` - http://localhost:3000 (dev) / https://setlistcreator.co.nz (prod)
-- `AUTH_GOOGLE_ID` - Google OAuth Client ID
-- `AUTH_GOOGLE_SECRET` - Google OAuth Client Secret
 
 ## Setup Notes
 
@@ -128,8 +126,7 @@ export function useSongsList(args) {
 1. Run `npx convex dev` to initialize Convex and generate types
 2. Copy `.env.example` to `.env.local` and fill in values
 3. Set Convex env vars: `npx convex env set SITE_URL http://localhost:3000`
-4. Set Google OAuth: `npx convex env set AUTH_GOOGLE_ID <id>` and `AUTH_GOOGLE_SECRET`
-5. Run `npm run dev` in a separate terminal
+4. Run `npm run dev` in a separate terminal
 
 ### Build Configuration
 - Uses webpack instead of Turbopack (required for @react-pdf/renderer compatibility)

@@ -201,6 +201,65 @@ export const updatePasswordHash = internalMutation({
   },
 });
 
+// ============================================================================
+// Migration: Google → Password (run once, then delete)
+// ============================================================================
+
+export const getUserByEmail = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), args.email))
+      .first();
+  },
+});
+
+export const createPasswordAccount = internalMutation({
+  args: {
+    userId: v.id("users"),
+    providerAccountId: v.string(),
+    secret: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("authAccounts", {
+      userId: args.userId,
+      provider: "password",
+      providerAccountId: args.providerAccountId,
+      secret: args.secret,
+    });
+  },
+});
+
+export const migrateGoogleUser = action({
+  args: {
+    email: v.string(),
+    newPassword: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (args.newPassword.length < 8) {
+      throw new Error("Password must be at least 8 characters");
+    }
+
+    const user = await ctx.runQuery(internal.users.getUserByEmail, { email: args.email });
+    if (!user) throw new Error("User not found");
+
+    const existingPassword = await ctx.runQuery(internal.users.getPasswordAccount, { userId: user._id });
+    if (existingPassword) throw new Error("Password account already exists");
+
+    const scrypt = new Scrypt();
+    const hash = await scrypt.hash(args.newPassword);
+
+    await ctx.runMutation(internal.users.createPasswordAccount, {
+      userId: user._id,
+      providerAccountId: args.email,
+      secret: hash,
+    });
+
+    return { success: true, userId: user._id };
+  },
+});
+
 export const changePassword = action({
   args: {
     currentPassword: v.string(),
