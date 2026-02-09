@@ -68,9 +68,6 @@ import {
   Loader2
 } from "lucide-react";
 import { toast } from "sonner";
-import { pdf } from "@react-pdf/renderer";
-import JSZip from "jszip";
-import { SetlistPDF } from "@/components/export/setlist-pdf";
 
 type GigStatus = "enquiry" | "confirmed" | "completed" | "cancelled";
 
@@ -446,6 +443,13 @@ export default function GigDetailPage() {
 
     setSendingGigPack(true);
     try {
+      // Dynamic imports to avoid loading @react-pdf/renderer at page level
+      const [{ pdf }, { SetlistPDF }, JSZip] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("@/components/export/setlist-pdf"),
+        import("jszip").then((m) => m.default)
+      ]);
+
       // Build songs map
       const songsById = new Map(allSongs.map((s: any) => [s._id, s])) as Map<string, any>;
 
