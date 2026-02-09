@@ -9,7 +9,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
-import { X, Music, ListMusic, LogOut } from "lucide-react";
+import { X, Music, ListMusic, Calendar, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -34,6 +34,7 @@ function MemberHeader({
   const links = [
     { href: `/${bandSlug}/songs`, label: "Songs", icon: Music },
     { href: `/${bandSlug}/setlists`, label: "Setlists", icon: ListMusic },
+    { href: `/${bandSlug}/gigs`, label: "Gigs", icon: Calendar },
   ];
 
   return (

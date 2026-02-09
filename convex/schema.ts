@@ -8,6 +8,19 @@ const setlistStatus = v.union(
   v.literal("archived")
 );
 
+const gigStatus = v.union(
+  v.literal("enquiry"),
+  v.literal("confirmed"),
+  v.literal("completed"),
+  v.literal("cancelled")
+);
+
+const gigMemberStatus = v.union(
+  v.literal("pending"),
+  v.literal("confirmed"),
+  v.literal("declined")
+);
+
 export default defineSchema({
   ...authTables,
 
@@ -120,6 +133,50 @@ export default defineSchema({
     .index("by_archivedAt", ["archivedAt"])
     .index("by_bandId_archivedAt", ["bandId", "archivedAt"])
     .index("by_accessToken", ["accessToken"]),
+
+  gigs: defineTable({
+    bandId: v.id("bands"),
+    name: v.string(),
+    status: gigStatus,
+    date: v.number(),
+    loadInTime: v.optional(v.string()),
+    soundcheckTime: v.optional(v.string()),
+    startTime: v.optional(v.string()),
+    endTime: v.optional(v.string()),
+    setTimes: v.optional(v.array(v.object({
+      setIndex: v.number(),
+      time: v.string()
+    }))),
+    venueName: v.optional(v.string()),
+    venueAddress: v.optional(v.string()),
+    venuePhone: v.optional(v.string()),
+    venueEmail: v.optional(v.string()),
+    venueNotes: v.optional(v.string()),
+    contactName: v.optional(v.string()),
+    contactPhone: v.optional(v.string()),
+    contactEmail: v.optional(v.string()),
+    dressCode: v.optional(v.string()),
+    description: v.optional(v.string()),
+    setlistId: v.optional(v.id("setlists")),
+    archivedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number()
+  })
+    .index("by_bandId", ["bandId"])
+    .index("by_bandId_archivedAt", ["bandId", "archivedAt"])
+    .index("by_date", ["date"])
+    .index("by_status", ["status"]),
+
+  gigMembers: defineTable({
+    gigId: v.id("gigs"),
+    memberId: v.id("bandMembers"),
+    status: gigMemberStatus,
+    note: v.optional(v.string()),
+    respondedAt: v.optional(v.number()),
+    createdAt: v.number()
+  })
+    .index("by_gigId", ["gigId"])
+    .index("by_memberId", ["memberId"]),
 
   templates: defineTable({
     bandId: v.id("bands"),

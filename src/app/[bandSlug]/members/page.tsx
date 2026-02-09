@@ -661,7 +661,7 @@ function EmailDialog({
         // ~27MB base64 ≈ 20MB decoded
         if (base64.length > 27_000_000) {
           toast.error("Charts package is too large to email", {
-            description: "Try using the Band Pack download instead."
+            description: "Try using the Gig Pack download instead."
           });
           setPreparing(false);
           return;

@@ -111,6 +111,17 @@ export const remove = mutation({
     const existing = await ctx.db.get(args.memberId);
     if (!existing) throw new Error("Member not found.");
     await assertBandOwner(ctx, existing.bandId);
+
+    // Delete all gigMembers for this member
+    const gigMembers = await ctx.db
+      .query("gigMembers")
+      .withIndex("by_memberId", (q) => q.eq("memberId", args.memberId))
+      .collect();
+
+    for (const gm of gigMembers) {
+      await ctx.db.delete(gm._id);
+    }
+
     await ctx.db.delete(args.memberId);
   }
 });

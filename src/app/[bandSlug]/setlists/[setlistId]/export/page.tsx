@@ -37,10 +37,10 @@ const PdfDownloadButton = dynamic(
   }
 );
 
-const BandPackDownloadButton = dynamic(
+const GigPackDownloadButton = dynamic(
   () =>
-    import("@/components/export/band-pack-download-button").then(
-      (mod) => mod.BandPackDownloadButton
+    import("@/components/export/gig-pack-download-button").then(
+      (mod) => mod.GigPackDownloadButton
     ),
   {
     ssr: false,
@@ -233,14 +233,14 @@ export default function ExportPage() {
                 <Package className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold">Band Pack</h3>
+                <h3 className="font-semibold">Gig Pack</h3>
                 <p className="text-sm text-muted-foreground">
                   Setlist + charts ZIP
                 </p>
               </div>
             </div>
             {mounted && (
-              <BandPackDownloadButton
+              <GigPackDownloadButton
                 setlist={setlist}
                 items={items}
                 songsById={songsById}
@@ -250,7 +250,7 @@ export default function ExportPage() {
                   showIntensity,
                   showEnergy
                 }}
-                fileName={`${setlist.name.replace(/[^a-z0-9]/gi, "-")}-band-pack.zip`}
+                fileName={`${setlist.name.replace(/[^a-z0-9]/gi, "-")}-gig-pack.zip`}
               />
             )}
           </CardContent>

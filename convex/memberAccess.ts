@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 
 /**
  * Read-only queries for band members.
@@ -162,6 +162,124 @@ export const getSetlistItems = query({
     return items.sort((a, b) => {
       if (a.setIndex !== b.setIndex) return a.setIndex - b.setIndex;
       return a.position - b.position;
+    });
+  },
+});
+
+// List gigs for the member's band
+export const listGigs = query({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const access = await validateMemberToken(ctx, args.token);
+    if (!access) return [];
+
+    const all = await ctx.db
+      .query("gigs")
+      .withIndex("by_bandId", (q: any) => q.eq("bandId", access.band._id))
+      .collect();
+
+    const gigs = all
+      .filter((g) => g.archivedAt === undefined)
+      .sort((a, b) => b.date - a.date);
+
+    // Attach member's own status for each gig
+    const result = await Promise.all(
+      gigs.map(async (gig) => {
+        const gigMembers = await ctx.db
+          .query("gigMembers")
+          .withIndex("by_gigId", (q: any) => q.eq("gigId", gig._id))
+          .collect();
+
+        const myGigMember = gigMembers.find(
+          (gm) => gm.memberId === access.member._id
+        );
+
+        return {
+          ...gig,
+          myStatus: myGigMember?.status ?? null,
+          myGigMemberId: myGigMember?._id ?? null
+        };
+      })
+    );
+
+    return result;
+  },
+});
+
+// Get a single gig with member's own status
+export const getGig = query({
+  args: { token: v.string(), gigId: v.id("gigs") },
+  handler: async (ctx, args) => {
+    const access = await validateMemberToken(ctx, args.token);
+    if (!access) return null;
+
+    const gig = await ctx.db.get(args.gigId);
+    if (!gig || gig.bandId !== access.band._id || gig.archivedAt) return null;
+
+    const gigMembers = await ctx.db
+      .query("gigMembers")
+      .withIndex("by_gigId", (q: any) => q.eq("gigId", args.gigId))
+      .collect();
+
+    const myGigMember = gigMembers.find(
+      (gm) => gm.memberId === access.member._id
+    );
+
+    // Enrich all members for display
+    const enrichedMembers = await Promise.all(
+      gigMembers.map(async (gm) => {
+        const member = await ctx.db.get(gm.memberId);
+        return {
+          ...gm,
+          memberName: member?.name ?? "Unknown",
+          memberRole: member?.role ?? ""
+        };
+      })
+    );
+
+    return {
+      ...gig,
+      myStatus: myGigMember?.status ?? null,
+      myGigMemberId: myGigMember?._id ?? null,
+      members: enrichedMembers.sort((a, b) =>
+        a.memberName.localeCompare(b.memberName)
+      )
+    };
+  },
+});
+
+// Member responds to a gig (confirm/decline)
+export const respondToGig = mutation({
+  args: {
+    token: v.string(),
+    gigId: v.id("gigs"),
+    status: v.union(v.literal("confirmed"), v.literal("declined")),
+    note: v.optional(v.string())
+  },
+  handler: async (ctx, args) => {
+    const access = await validateMemberToken(ctx, args.token);
+    if (!access) throw new Error("Invalid token");
+
+    const gig = await ctx.db.get(args.gigId);
+    if (!gig || gig.bandId !== access.band._id) {
+      throw new Error("Gig not found");
+    }
+
+    const gigMembers = await ctx.db
+      .query("gigMembers")
+      .withIndex("by_gigId", (q: any) => q.eq("gigId", args.gigId))
+      .collect();
+
+    const myGigMember = gigMembers.find(
+      (gm) => gm.memberId === access.member._id
+    );
+
+    if (!myGigMember) throw new Error("Not a member of this gig");
+
+    await ctx.db.patch(myGigMember._id, {
+      status: args.status,
+      note: args.note,
+      respondedAt: Date.now()
     });
   },
 });

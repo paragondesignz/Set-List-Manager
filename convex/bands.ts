@@ -202,6 +202,23 @@ export const remove = mutation({
       await ctx.db.delete(template._id);
     }
 
+    // Delete all gigs and their gigMembers
+    const gigs = await ctx.db
+      .query("gigs")
+      .withIndex("by_bandId", (q) => q.eq("bandId", args.bandId))
+      .collect();
+
+    for (const gig of gigs) {
+      const gigMembers = await ctx.db
+        .query("gigMembers")
+        .withIndex("by_gigId", (q) => q.eq("gigId", gig._id))
+        .collect();
+      for (const gm of gigMembers) {
+        await ctx.db.delete(gm._id);
+      }
+      await ctx.db.delete(gig._id);
+    }
+
     await ctx.db.delete(args.bandId);
   }
 });

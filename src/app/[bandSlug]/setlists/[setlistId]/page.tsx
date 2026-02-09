@@ -45,10 +45,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const BandPackDownloadButton = dynamic(
+const GigPackDownloadButton = dynamic(
   () =>
-    import("@/components/export/band-pack-download-button").then(
-      (mod) => mod.BandPackDownloadButton
+    import("@/components/export/gig-pack-download-button").then(
+      (mod) => mod.GigPackDownloadButton
     ),
   {
     ssr: false,
@@ -283,7 +283,7 @@ export default function SetlistDetailPage() {
         )}
       </div>
 
-      {/* Band Pack Download (members) */}
+      {/* Gig Pack Download (members) */}
       {isMember && (
         <Card>
           <CardContent className="p-5">
@@ -292,17 +292,17 @@ export default function SetlistDetailPage() {
                 <Package className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold">Band Pack</h3>
+                <h3 className="text-sm font-semibold">Gig Pack</h3>
                 <p className="text-xs text-muted-foreground">Download setlist PDF + song charts as a ZIP</p>
               </div>
             </div>
-            <BandPackDownloadButton
+            <GigPackDownloadButton
               setlist={setlist}
               items={items}
               songsById={songsById}
               chartUrls={chartUrls}
               options={{ showArtist: true, showIntensity: false, showEnergy: false }}
-              fileName={`${setlist.name.replace(/[^a-z0-9]/gi, "-")}-band-pack.zip`}
+              fileName={`${setlist.name.replace(/[^a-z0-9]/gi, "-")}-gig-pack.zip`}
             />
           </CardContent>
         </Card>

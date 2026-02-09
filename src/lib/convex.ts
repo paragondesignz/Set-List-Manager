@@ -276,6 +276,74 @@ export function useCreateTemplateFromSetlist() {
 }
 
 // ============================================================================
+// Gigs
+// ============================================================================
+
+export function useGigsList(args: {
+  bandId: string;
+  includeArchived?: boolean;
+  status?: "enquiry" | "confirmed" | "completed" | "cancelled";
+} | null) {
+  if (!args) return useQuery(q("gigs:list"), "skip");
+  return useQuery(q("gigs:list"), args as any);
+}
+
+export function useGig(gigId: string | null) {
+  if (!gigId) return useQuery(q("gigs:get"), "skip");
+  return useQuery(q("gigs:get"), { gigId } as any);
+}
+
+export function useUpcomingGigs(args: { bandId: string; limit?: number } | null) {
+  if (!args) return useQuery(q("gigs:upcoming"), "skip");
+  return useQuery(q("gigs:upcoming"), args as any);
+}
+
+export function useCreateGig() {
+  return useMutation(q("gigs:create"));
+}
+
+export function useUpdateGig() {
+  return useMutation(q("gigs:update"));
+}
+
+export function useArchiveGig() {
+  return useMutation(q("gigs:archive"));
+}
+
+export function useRemoveGig() {
+  return useMutation(q("gigs:remove"));
+}
+
+export function useUpdateGigStatus() {
+  return useMutation(q("gigs:updateStatus"));
+}
+
+// ============================================================================
+// Gig Members
+// ============================================================================
+
+export function useGigMembersList(gigId: string | null) {
+  if (!gigId) return useQuery(q("gigMembers:listByGig"), "skip");
+  return useQuery(q("gigMembers:listByGig"), { gigId } as any);
+}
+
+export function useRespondToGig() {
+  return useMutation(q("gigMembers:respond"));
+}
+
+export function useAdminUpdateGigMember() {
+  return useMutation(q("gigMembers:adminUpdate"));
+}
+
+export function useAddGigMember() {
+  return useMutation(q("gigMembers:addMember"));
+}
+
+export function useRemoveGigMember() {
+  return useMutation(q("gigMembers:removeMember"));
+}
+
+// ============================================================================
 // Member Access (read-only, token-based)
 // ============================================================================
 
@@ -302,6 +370,20 @@ export function useMemberSetlist(token: string | null, setlistId: string | null)
 export function useMemberSetlistItems(token: string | null, setlistId: string | null) {
   if (!token || !setlistId) return useQuery(q("memberAccess:getSetlistItems"), "skip");
   return useQuery(q("memberAccess:getSetlistItems"), { token, setlistId } as any);
+}
+
+export function useMemberGigsList(token: string | null) {
+  if (!token) return useQuery(q("memberAccess:listGigs"), "skip");
+  return useQuery(q("memberAccess:listGigs"), { token } as any);
+}
+
+export function useMemberGig(token: string | null, gigId: string | null) {
+  if (!token || !gigId) return useQuery(q("memberAccess:getGig"), "skip");
+  return useQuery(q("memberAccess:getGig"), { token, gigId } as any);
+}
+
+export function useMemberRespondToGig() {
+  return useMutation(q("memberAccess:respondToGig"));
 }
 
 // ============================================================================

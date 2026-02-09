@@ -1,0 +1,882 @@
+"use client";
+
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  useBandBySlug,
+  useGig,
+  useGigMembersList,
+  useSetlist,
+  useSetlistsList,
+  useUpdateGig,
+  useUpdateGigStatus,
+  useArchiveGig,
+  useRemoveGig,
+  useAdminUpdateGigMember,
+  useMemberGig,
+  useMemberRespondToGig
+} from "@/lib/convex";
+import { useMemberAuth } from "@/hooks/useMemberAuth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  MapPin,
+  Phone,
+  Mail,
+  User,
+  Shirt,
+  ListMusic,
+  Pencil,
+  Trash2,
+  Check,
+  X,
+  HelpCircle
+} from "lucide-react";
+import { toast } from "sonner";
+
+type GigStatus = "enquiry" | "confirmed" | "completed" | "cancelled";
+
+function statusBadge(status: string) {
+  switch (status) {
+    case "enquiry":
+      return <Badge variant="secondary">Enquiry</Badge>;
+    case "confirmed":
+      return <Badge variant="default">Confirmed</Badge>;
+    case "completed":
+      return <Badge variant="outline">Completed</Badge>;
+    case "cancelled":
+      return <Badge variant="destructive">Cancelled</Badge>;
+    default:
+      return null;
+  }
+}
+
+function memberStatusIcon(status: string) {
+  switch (status) {
+    case "confirmed":
+      return <Check className="h-4 w-4 text-green-600" />;
+    case "declined":
+      return <X className="h-4 w-4 text-red-500" />;
+    default:
+      return <HelpCircle className="h-4 w-4 text-muted-foreground" />;
+  }
+}
+
+export default function GigDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const bandSlug = params.bandSlug as string;
+  const gigId = params.gigId as string;
+  const { isMember, token: memberToken } = useMemberAuth();
+
+  // Admin queries
+  const band = useBandBySlug(isMember ? null : bandSlug);
+  const adminGig = useGig(isMember ? null : gigId);
+  const gigMembers = useGigMembersList(isMember ? null : gigId);
+  const adminSetlists = useSetlistsList(
+    !isMember && band ? { bandId: band._id } : null
+  );
+
+  // Member queries
+  const memberGig = useMemberGig(
+    isMember ? memberToken : null,
+    isMember ? gigId : null
+  );
+
+  const gig = isMember ? memberGig : adminGig;
+  const linkedSetlist = useSetlist(
+    !isMember && gig?.setlistId ? (gig.setlistId as string) : null
+  );
+
+  // Mutations
+  const updateGig = useUpdateGig();
+  const updateStatus = useUpdateGigStatus();
+  const archiveGig = useArchiveGig();
+  const removeGig = useRemoveGig();
+  const adminUpdateMember = useAdminUpdateGigMember();
+  const memberRespond = useMemberRespondToGig();
+
+  // Dialog states
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Edit form
+  const [editName, setEditName] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editLoadIn, setEditLoadIn] = useState("");
+  const [editSoundcheck, setEditSoundcheck] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [editVenueName, setEditVenueName] = useState("");
+  const [editVenueAddress, setEditVenueAddress] = useState("");
+  const [editVenuePhone, setEditVenuePhone] = useState("");
+  const [editVenueEmail, setEditVenueEmail] = useState("");
+  const [editVenueNotes, setEditVenueNotes] = useState("");
+  const [editContactName, setEditContactName] = useState("");
+  const [editContactPhone, setEditContactPhone] = useState("");
+  const [editContactEmail, setEditContactEmail] = useState("");
+  const [editDressCode, setEditDressCode] = useState("");
+  const [editSetlistId, setEditSetlistId] = useState("");
+
+  // Member response
+  const [respondNote, setRespondNote] = useState("");
+  const [responding, setResponding] = useState(false);
+
+  if (!isMember && !band) return null;
+
+  if (gig === undefined) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (gig === null) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-muted-foreground">Gig not found</div>
+      </div>
+    );
+  }
+
+  const openEdit = () => {
+    setEditName(gig.name);
+    setEditDate(new Date(gig.date).toISOString().split("T")[0]);
+    setEditDescription(gig.description ?? "");
+    setEditLoadIn(gig.loadInTime ?? "");
+    setEditSoundcheck(gig.soundcheckTime ?? "");
+    setEditStart(gig.startTime ?? "");
+    setEditEnd(gig.endTime ?? "");
+    setEditVenueName(gig.venueName ?? "");
+    setEditVenueAddress(gig.venueAddress ?? "");
+    setEditVenuePhone(gig.venuePhone ?? "");
+    setEditVenueEmail(gig.venueEmail ?? "");
+    setEditVenueNotes(gig.venueNotes ?? "");
+    setEditContactName(gig.contactName ?? "");
+    setEditContactPhone(gig.contactPhone ?? "");
+    setEditContactEmail(gig.contactEmail ?? "");
+    setEditDressCode(gig.dressCode ?? "");
+    setEditSetlistId(gig.setlistId ?? "");
+    setEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      await updateGig({
+        gigId: gigId as any,
+        patch: {
+          name: editName.trim(),
+          date: new Date(editDate).getTime(),
+          description: editDescription.trim() || undefined,
+          loadInTime: editLoadIn || undefined,
+          soundcheckTime: editSoundcheck || undefined,
+          startTime: editStart || undefined,
+          endTime: editEnd || undefined,
+          venueName: editVenueName.trim() || undefined,
+          venueAddress: editVenueAddress.trim() || undefined,
+          venuePhone: editVenuePhone.trim() || undefined,
+          venueEmail: editVenueEmail.trim() || undefined,
+          venueNotes: editVenueNotes.trim() || undefined,
+          contactName: editContactName.trim() || undefined,
+          contactPhone: editContactPhone.trim() || undefined,
+          contactEmail: editContactEmail.trim() || undefined,
+          dressCode: editDressCode.trim() || undefined,
+          setlistId: editSetlistId ? (editSetlistId as any) : undefined
+        }
+      });
+      setEditOpen(false);
+      toast.success("Gig updated");
+    } catch (e: any) {
+      toast.error("Failed to update", { description: e?.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleStatusChange = async (newStatus: GigStatus) => {
+    try {
+      await updateStatus({ gigId: gigId as any, status: newStatus });
+      toast.success(`Gig marked as ${newStatus}`);
+    } catch (e: any) {
+      toast.error("Failed to update status", { description: e?.message });
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await removeGig({ gigId: gigId as any });
+      toast.success("Gig deleted");
+      router.push(`/${bandSlug}/gigs`);
+    } catch (e: any) {
+      toast.error("Failed to delete", { description: e?.message });
+    }
+  };
+
+  const handleAdminMemberUpdate = async (
+    memberId: string,
+    status: "pending" | "confirmed" | "declined"
+  ) => {
+    try {
+      await adminUpdateMember({
+        gigId: gigId as any,
+        memberId: memberId as any,
+        status
+      });
+      toast.success("Member status updated");
+    } catch (e: any) {
+      toast.error("Failed to update", { description: e?.message });
+    }
+  };
+
+  const handleMemberRespond = async (status: "confirmed" | "declined") => {
+    setResponding(true);
+    try {
+      await memberRespond({
+        token: memberToken!,
+        gigId: gigId as any,
+        status,
+        note: respondNote.trim() || undefined
+      });
+      toast.success(
+        status === "confirmed" ? "You confirmed!" : "Response recorded"
+      );
+    } catch (e: any) {
+      toast.error("Failed to respond", { description: e?.message });
+    } finally {
+      setResponding(false);
+    }
+  };
+
+  const dateFormatted = new Date(gig.date).toLocaleDateString("en-NZ", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+
+  // For member view, members come from memberGig
+  const displayMembers = isMember ? (gig as any).members ?? [] : gigMembers ?? [];
+  const confirmedCount = displayMembers.filter(
+    (m: any) => m.status === "confirmed"
+  ).length;
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-start gap-4">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href={`/${bandSlug}/gigs`}>
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-xl font-semibold tracking-tight">
+              {gig.name}
+            </h1>
+            {statusBadge(gig.status)}
+          </div>
+          <p className="flex items-center gap-1 text-muted-foreground text-sm">
+            <Calendar className="h-3 w-3" />
+            {dateFormatted}
+          </p>
+        </div>
+        {!isMember && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={openEdit}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Status Actions (admin) */}
+      {!isMember && (
+        <div className="flex flex-wrap gap-2">
+          {gig.status === "enquiry" && (
+            <Button
+              variant="outline"
+              onClick={() => handleStatusChange("confirmed")}
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Confirm Gig
+            </Button>
+          )}
+          {gig.status === "confirmed" && (
+            <Button
+              variant="outline"
+              onClick={() => handleStatusChange("completed")}
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Mark Completed
+            </Button>
+          )}
+          {(gig.status === "enquiry" || gig.status === "confirmed") && (
+            <Button
+              variant="outline"
+              onClick={() => handleStatusChange("cancelled")}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel Gig
+            </Button>
+          )}
+          {gig.status === "cancelled" && (
+            <Button
+              variant="outline"
+              onClick={() => handleStatusChange("enquiry")}
+            >
+              Reopen as Enquiry
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            className="text-destructive"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        </div>
+      )}
+
+      {/* Member Response Card */}
+      {isMember && (
+        <Card>
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm">Your Response</CardTitle>
+          </CardHeader>
+          <CardContent className="py-3 pt-0 space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Status:</span>
+              {(gig as any).myStatus === "confirmed" && (
+                <Badge variant="default">Confirmed</Badge>
+              )}
+              {(gig as any).myStatus === "declined" && (
+                <Badge variant="destructive">Declined</Badge>
+              )}
+              {(gig as any).myStatus === "pending" && (
+                <Badge variant="secondary">Pending</Badge>
+              )}
+              {!(gig as any).myStatus && (
+                <Badge variant="outline">Not invited</Badge>
+              )}
+            </div>
+            {(gig as any).myStatus && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Note (optional)</label>
+                  <Input
+                    placeholder="Add a note..."
+                    value={respondNote}
+                    onChange={(e) => setRespondNote(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleMemberRespond("confirmed")}
+                    disabled={responding}
+                    variant={
+                      (gig as any).myStatus === "confirmed"
+                        ? "default"
+                        : "outline"
+                    }
+                  >
+                    <Check className="h-4 w-4 mr-1" />
+                    Confirm
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={
+                      (gig as any).myStatus === "declined"
+                        ? "destructive"
+                        : "outline"
+                    }
+                    onClick={() => handleMemberRespond("declined")}
+                    disabled={responding}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Decline
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Info Cards */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {/* Schedule */}
+        {(gig.loadInTime || gig.soundcheckTime || gig.startTime || gig.endTime) && (
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Schedule
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-3 pt-0 space-y-1">
+              {gig.loadInTime && (
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Load-in:</span>{" "}
+                  {gig.loadInTime}
+                </p>
+              )}
+              {gig.soundcheckTime && (
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Soundcheck:</span>{" "}
+                  {gig.soundcheckTime}
+                </p>
+              )}
+              {gig.startTime && (
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Start:</span>{" "}
+                  {gig.startTime}
+                </p>
+              )}
+              {gig.endTime && (
+                <p className="text-sm">
+                  <span className="text-muted-foreground">End:</span>{" "}
+                  {gig.endTime}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Venue */}
+        {(gig.venueName || gig.venueAddress) && (
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Venue
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-3 pt-0 space-y-1">
+              {gig.venueName && (
+                <p className="text-sm font-medium">{gig.venueName}</p>
+              )}
+              {gig.venueAddress && (
+                <p className="text-sm text-muted-foreground">
+                  {gig.venueAddress}
+                </p>
+              )}
+              {gig.venuePhone && (
+                <p className="text-sm flex items-center gap-1">
+                  <Phone className="h-3 w-3 text-muted-foreground" />
+                  {gig.venuePhone}
+                </p>
+              )}
+              {gig.venueEmail && (
+                <p className="text-sm flex items-center gap-1">
+                  <Mail className="h-3 w-3 text-muted-foreground" />
+                  {gig.venueEmail}
+                </p>
+              )}
+              {gig.venueNotes && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {gig.venueNotes}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Contact */}
+        {(gig.contactName || gig.contactPhone || gig.contactEmail) && (
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Contact
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-3 pt-0 space-y-1">
+              {gig.contactName && (
+                <p className="text-sm font-medium">{gig.contactName}</p>
+              )}
+              {gig.contactPhone && (
+                <p className="text-sm flex items-center gap-1">
+                  <Phone className="h-3 w-3 text-muted-foreground" />
+                  {gig.contactPhone}
+                </p>
+              )}
+              {gig.contactEmail && (
+                <p className="text-sm flex items-center gap-1">
+                  <Mail className="h-3 w-3 text-muted-foreground" />
+                  {gig.contactEmail}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Dress Code & Description */}
+        {(gig.dressCode || gig.description) && (
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Shirt className="h-4 w-4" />
+                Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-3 pt-0 space-y-2">
+              {gig.dressCode && (
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Dress code:</span>{" "}
+                  {gig.dressCode}
+                </p>
+              )}
+              {gig.description && (
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {gig.description}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Linked Setlist */}
+      <Card>
+        <CardHeader className="py-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <ListMusic className="h-4 w-4" />
+            Linked Setlist
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="py-3 pt-0">
+          {gig.setlistId ? (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">
+                  {linkedSetlist?.name ?? (isMember ? "Setlist linked" : "Loading...")}
+                </p>
+                {linkedSetlist?.gigDate && (
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(linkedSetlist.gigDate).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/${bandSlug}/setlists/${gig.setlistId}`}>
+                  View Setlist
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No setlist linked to this gig
+              {!isMember && " — click Edit to link one"}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Member Availability */}
+      <Card>
+        <CardHeader className="py-3">
+          <CardTitle className="text-sm flex items-center justify-between">
+            <span>Member Availability</span>
+            <span className="font-normal text-muted-foreground">
+              {confirmedCount} of {displayMembers.length} confirmed
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="py-3 pt-0">
+          {displayMembers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No members</p>
+          ) : (
+            <div className="space-y-2">
+              {displayMembers.map((gm: any) => (
+                <div
+                  key={gm._id}
+                  className="flex items-center gap-3 p-2 rounded-lg border border-border"
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {memberStatusIcon(gm.status)}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {gm.memberName}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {gm.memberRole}
+                      </p>
+                    </div>
+                  </div>
+                  {gm.note && (
+                    <p className="text-xs text-muted-foreground italic hidden sm:block max-w-[200px] truncate">
+                      {gm.note}
+                    </p>
+                  )}
+                  {!isMember && (
+                    <Select
+                      value={gm.status}
+                      onValueChange={(v) =>
+                        handleAdminMemberUpdate(gm.memberId, v as any)
+                      }
+                    >
+                      <SelectTrigger className="w-[120px] h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="declined">Declined</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Admin Dialogs */}
+      {!isMember && (
+        <>
+          {/* Edit Dialog */}
+          <Dialog open={editOpen} onOpenChange={setEditOpen}>
+            <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+              <DialogHeader>
+                <DialogTitle>Edit Gig</DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 overflow-auto space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-sm font-medium">Name</label>
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Date</label>
+                    <Input
+                      type="date"
+                      value={editDate}
+                      onChange={(e) => setEditDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Dress Code</label>
+                    <Input
+                      value={editDressCode}
+                      onChange={(e) => setEditDressCode(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description</label>
+                  <Textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">
+                  Schedule
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Load-in</label>
+                    <Input
+                      type="time"
+                      value={editLoadIn}
+                      onChange={(e) => setEditLoadIn(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Soundcheck</label>
+                    <Input
+                      type="time"
+                      value={editSoundcheck}
+                      onChange={(e) => setEditSoundcheck(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Start</label>
+                    <Input
+                      type="time"
+                      value={editStart}
+                      onChange={(e) => setEditStart(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">End</label>
+                    <Input
+                      type="time"
+                      value={editEnd}
+                      onChange={(e) => setEditEnd(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">
+                  Venue
+                </h3>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Venue Name</label>
+                    <Input
+                      value={editVenueName}
+                      onChange={(e) => setEditVenueName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Address</label>
+                    <Input
+                      value={editVenueAddress}
+                      onChange={(e) => setEditVenueAddress(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Phone</label>
+                      <Input
+                        value={editVenuePhone}
+                        onChange={(e) => setEditVenuePhone(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Email</label>
+                      <Input
+                        value={editVenueEmail}
+                        onChange={(e) => setEditVenueEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Notes</label>
+                    <Textarea
+                      value={editVenueNotes}
+                      onChange={(e) => setEditVenueNotes(e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">
+                  Contact
+                </h3>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Name</label>
+                    <Input
+                      value={editContactName}
+                      onChange={(e) => setEditContactName(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Phone</label>
+                      <Input
+                        value={editContactPhone}
+                        onChange={(e) => setEditContactPhone(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Email</label>
+                      <Input
+                        value={editContactEmail}
+                        onChange={(e) => setEditContactEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">
+                  Linked Setlist
+                </h3>
+                <div className="space-y-2">
+                  <Select
+                    value={editSetlistId || "none"}
+                    onValueChange={(v) =>
+                      setEditSetlistId(v === "none" ? "" : v)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="No setlist linked" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No setlist linked</SelectItem>
+                      {adminSetlists?.map((sl: any) => (
+                        <SelectItem key={sl._id} value={sl._id}>
+                          {sl.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEdit} disabled={saving}>
+                  {saving ? "Saving..." : "Save"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Delete Dialog */}
+          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Gig</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete &quot;{gig.name}&quot;? This
+                  action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={handleDelete}>
+                  Delete
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
+    </div>
+  );
+}

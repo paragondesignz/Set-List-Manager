@@ -5,7 +5,8 @@ import Link from "next/link";
 import {
   useBandBySlug,
   useSongsList,
-  useSetlistsList
+  useSetlistsList,
+  useUpcomingGigs
 } from "@/lib/convex";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,7 @@ export default function BandDashboardPage() {
   const band = useBandBySlug(bandSlug);
   const songs = useSongsList(band ? { bandId: band._id } : null);
   const setlists = useSetlistsList(band ? { bandId: band._id } : null);
+  const upcomingGigs = useUpcomingGigs(band ? { bandId: band._id } : null);
 
   if (!band) return null;
 
@@ -43,7 +45,7 @@ export default function BandDashboardPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
         <Link href={`/${bandSlug}/songs`}>
           <Card className="hover-lift cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -91,10 +93,26 @@ export default function BandDashboardPage() {
             </CardContent>
           </Card>
         </Link>
+
+        <Link href={`/${bandSlug}/gigs`}>
+          <Card className="hover-lift cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Upcoming Gigs
+              </CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{upcomingGigs?.length ?? 0}</div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Card className="hover-lift group cursor-pointer">
           <Link href={`/${bandSlug}/setlists/new`}>
             <CardContent className="flex items-center gap-4 py-6">
@@ -126,7 +144,78 @@ export default function BandDashboardPage() {
             </CardContent>
           </Link>
         </Card>
+
+        <Card className="hover-lift group cursor-pointer">
+          <Link href={`/${bandSlug}/gigs/new`}>
+            <CardContent className="flex items-center gap-4 py-6">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center transition-all duration-200 group-hover:bg-primary group-hover:shadow-lg group-hover:shadow-primary/25">
+                <Calendar className="h-6 w-6 text-primary transition-colors group-hover:text-primary-foreground" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Create Gig</h3>
+                <p className="text-sm text-muted-foreground">
+                  Add an upcoming gig
+                </p>
+              </div>
+            </CardContent>
+          </Link>
+        </Card>
       </div>
+
+      {/* Upcoming Gigs */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Upcoming Gigs</CardTitle>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={`/${bandSlug}/gigs`}>
+              View All
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {!upcomingGigs || upcomingGigs.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p className="mb-4">No upcoming gigs</p>
+              <Button asChild>
+                <Link href={`/${bandSlug}/gigs/new`}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create your first gig
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {upcomingGigs.map((gig: any) => (
+                <Link
+                  key={gig._id}
+                  href={`/${bandSlug}/gigs/${gig._id}`}
+                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                >
+                  <div>
+                    <h4 className="font-medium">{gig.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(gig.date).toLocaleDateString()}
+                      {gig.venueName && ` — ${gig.venueName}`}
+                    </p>
+                  </div>
+                  <Badge
+                    variant={
+                      gig.status === "enquiry"
+                        ? "secondary"
+                        : gig.status === "confirmed"
+                          ? "default"
+                          : "outline"
+                    }
+                  >
+                    {gig.status}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Recent Setlists */}
       <Card>

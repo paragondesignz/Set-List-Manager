@@ -57,7 +57,7 @@ function sanitizeFilename(name: string): string {
   return name.replace(/[^a-z0-9\s\-_]/gi, "").replace(/\s+/g, "-");
 }
 
-export function BandPackDownloadButton({
+export function GigPackDownloadButton({
   setlist,
   items,
   songsById,
@@ -145,10 +145,10 @@ export function BandPackDownloadButton({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success("Band pack downloaded");
+      toast.success("Gig pack downloaded");
     } catch (error) {
-      console.error("Failed to generate band pack:", error);
-      toast.error("Failed to generate band pack");
+      console.error("Failed to generate gig pack:", error);
+      toast.error("Failed to generate gig pack");
     } finally {
       setLoading(false);
     }
@@ -165,7 +165,7 @@ export function BandPackDownloadButton({
         ) : (
           <>
             <Download className="h-4 w-4 mr-2" />
-            Download Band Pack
+            Download Gig Pack
           </>
         )}
       </Button>
