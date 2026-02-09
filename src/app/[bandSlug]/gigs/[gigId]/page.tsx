@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -430,7 +430,7 @@ export default function GigDetailPage() {
   const sanitizeFilename = (name: string) =>
     name.replace(/[^a-z0-9\s\-_]/gi, "").replace(/\s+/g, "-");
 
-  const handleSendGigPack = useCallback(async () => {
+  const handleSendGigPack = async () => {
     if (!linkedSetlist || !setlistItems || !allSongs || !gigMembers) return;
 
     const confirmedMembers = gigMembers.filter(
@@ -558,7 +558,7 @@ export default function GigDetailPage() {
     } finally {
       setSendingGigPack(false);
     }
-  }, [linkedSetlist, setlistItems, allSongs, gigMembers, chartUrls, gig, band, currentUser]);
+  };
 
   const dateFormatted = new Date(gig.date).toLocaleDateString("en-NZ", {
     weekday: "long",
