@@ -7,6 +7,8 @@ import {
 const isPublicRoute = createRouteMatcher([
   "/",
   "/login",
+  "/forgot-password",
+  "/reset-password",
   "/member-login",
   "/subscribe",
   "/api/auth/(.*)",

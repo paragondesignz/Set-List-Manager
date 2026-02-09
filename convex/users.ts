@@ -260,6 +260,110 @@ export const migrateGoogleUser = action({
   },
 });
 
+// ============================================================================
+// Password Reset
+// ============================================================================
+
+export const storeResetToken = internalMutation({
+  args: { userId: v.id("users"), token: v.string(), expiry: v.number() },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      passwordResetToken: args.token,
+      passwordResetExpiry: args.expiry,
+    });
+  },
+});
+
+export const clearResetToken = internalMutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      passwordResetToken: undefined,
+      passwordResetExpiry: undefined,
+    });
+  },
+});
+
+export const requestPasswordReset = action({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const email = args.email.trim().toLowerCase();
+    const user = await ctx.runQuery(internal.users.getUserByEmail, { email });
+    if (!user) return { found: false };
+
+    // Generate a secure random token
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const expiry = Date.now() + 60 * 60 * 1000; // 1 hour
+
+    await ctx.runMutation(internal.users.storeResetToken, {
+      userId: user._id,
+      token,
+      expiry,
+    });
+
+    return { found: true, token, email: user.email };
+  },
+});
+
+export const resetPasswordWithToken = action({
+  args: {
+    token: v.string(),
+    email: v.string(),
+    newPassword: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (args.newPassword.length < 8) {
+      throw new Error("Password must be at least 8 characters");
+    }
+
+    const user = await ctx.runQuery(internal.users.getUserByEmail, {
+      email: args.email,
+    });
+    if (!user) throw new Error("Invalid or expired reset link");
+
+    if (
+      !user.passwordResetToken ||
+      !user.passwordResetExpiry ||
+      user.passwordResetToken !== args.token ||
+      user.passwordResetExpiry < Date.now()
+    ) {
+      throw new Error("Invalid or expired reset link");
+    }
+
+    const scrypt = new Scrypt();
+    const hash = await scrypt.hash(args.newPassword);
+
+    // Check if user already has a password account
+    const existing = await ctx.runQuery(internal.users.getPasswordAccount, {
+      userId: user._id,
+    });
+
+    if (existing) {
+      // Update existing password
+      await ctx.runMutation(internal.users.updatePasswordHash, {
+        accountId: existing._id,
+        secret: hash,
+      });
+    } else {
+      // Create password account (e.g. Google-only user)
+      await ctx.runMutation(internal.users.createPasswordAccount, {
+        userId: user._id,
+        providerAccountId: args.email,
+        secret: hash,
+      });
+    }
+
+    // Clear the reset token
+    await ctx.runMutation(internal.users.clearResetToken, {
+      userId: user._id,
+    });
+
+    return { success: true };
+  },
+});
+
 export const changePassword = action({
   args: {
     currentPassword: v.string(),

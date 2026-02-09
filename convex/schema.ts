@@ -31,6 +31,9 @@ export default defineSchema({
     emailVerificationTime: v.optional(v.number()),
     image: v.optional(v.string()),
     isAnonymous: v.optional(v.boolean()),
+    // Password reset
+    passwordResetToken: v.optional(v.string()),
+    passwordResetExpiry: v.optional(v.number()),
     // Stripe subscription fields
     stripeCustomerId: v.optional(v.string()),
     stripeSubscriptionId: v.optional(v.string()),

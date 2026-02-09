@@ -115,7 +115,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="text-center mt-4">
+        <div className="text-center mt-4 space-y-2">
           <button
             type="button"
             onClick={() => {
@@ -128,6 +128,16 @@ export default function LoginPage() {
               ? "Don't have an account? Sign up"
               : "Already have an account? Sign in"}
           </button>
+          {mode === "signin" && (
+            <div>
+              <Link
+                href="/forgot-password"
+                className="text-sm text-muted-foreground hover:text-primary hover:underline"
+              >
+                Forgot your password?
+              </Link>
+            </div>
+          )}
         </div>
 
         <div className="text-center mt-6">
