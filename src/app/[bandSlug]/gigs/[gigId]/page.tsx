@@ -536,7 +536,8 @@ export default function GigDetailPage() {
       html += `</div>`;
 
       const recipients = confirmedMembers.map((m: any) => m.memberEmail);
-      const zipFileName = `${sanitizeFilename(gig.name)}-gig-pack.zip`;
+      const gigDate = new Date(gig.date).toISOString().split("T")[0];
+      const zipFileName = `${sanitizeFilename(gig.name)}-${gigDate}-gig-pack.zip`;
 
       await fetch("/api/email/send", {
         method: "POST",
