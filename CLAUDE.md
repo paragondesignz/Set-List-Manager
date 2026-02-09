@@ -104,7 +104,7 @@ export function useSongsList(args) {
 
 ### Design System
 - **Theme**: Light mode with purple-to-blue palette (matching Set List Creator logo)
-- **Typography**: DM Sans (body/UI) + DM Mono (code/numbers)
+- **Typography**: Plus Jakarta Sans (body/UI) + DM Mono (code/numbers)
 - **Components**: shadcn/ui with custom light theme
 
 ## Environment Variables

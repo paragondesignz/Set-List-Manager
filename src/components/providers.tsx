@@ -28,9 +28,10 @@ export function Providers({ children }: { children: ReactNode }) {
         position="bottom-right"
         toastOptions={{
           style: {
-            background: "oklch(0.12 0 0)",
-            border: "1px solid oklch(0.25 0 0)",
-            color: "oklch(0.98 0 0)"
+            background: "oklch(0.13 0.015 280)",
+            border: "1px solid oklch(0.25 0.01 280)",
+            color: "oklch(0.98 0 0)",
+            borderRadius: "0.75rem"
           }
         }}
       />

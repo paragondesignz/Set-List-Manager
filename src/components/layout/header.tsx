@@ -18,7 +18,7 @@ type HeaderProps = {
 
 export function Header({ band }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background">
+    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-6">
         <div className="flex items-center gap-3">
           <Link

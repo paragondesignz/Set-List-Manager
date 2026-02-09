@@ -45,7 +45,7 @@ export function Nav({ bandSlug }: NavProps) {
           <span className="hidden sm:inline">Bands</span>
           <ChevronDown className="h-3 w-3 text-muted-foreground hidden sm:inline" />
           {isActive(["/bands", `/${bandSlug}/members`]) && (
-            <span className="absolute bottom-[-0.6875rem] left-3 right-3 h-0.5 bg-primary rounded-full" />
+            <span className="absolute bottom-[-0.6875rem] left-3 right-3 h-[2.5px] bg-primary rounded-full" />
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
@@ -92,7 +92,7 @@ export function Nav({ bandSlug }: NavProps) {
           <span className="hidden sm:inline">Set Lists</span>
           <ChevronDown className="h-3 w-3 text-muted-foreground hidden sm:inline" />
           {isActive([`/${bandSlug}/setlists`, `/${bandSlug}/templates`]) && (
-            <span className="absolute bottom-[-0.6875rem] left-3 right-3 h-0.5 bg-primary rounded-full" />
+            <span className="absolute bottom-[-0.6875rem] left-3 right-3 h-[2.5px] bg-primary rounded-full" />
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
