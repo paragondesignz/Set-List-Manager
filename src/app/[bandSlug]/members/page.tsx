@@ -426,9 +426,14 @@ function EmailDialog({
   const setlists = useSetlistsList({ bandId: bandId as any, includeArchived: false });
   const setlistItems = useSetlistItems(selectedSetlistId || null);
 
-  // Get chart storage URLs for selected songs
+  // Collect chart storage IDs from both selected songs (charts mode) and setlist songs
+  const setlistSongIds = new Set(
+    (setlistItems ?? []).map((item: any) => item.songId as string)
+  );
   const chartStorageIds = songs
-    ?.filter((s: any) => selectedSongIds.has(s._id) && s.chartFileId)
+    ?.filter((s: any) =>
+      (selectedSongIds.has(s._id) || setlistSongIds.has(s._id)) && s.chartFileId
+    )
     .map((s: any) => s.chartFileId as string) ?? [];
   const chartUrls = useMultipleStorageUrls(chartStorageIds);
 
@@ -602,6 +607,54 @@ function EmailDialog({
 
     try {
       let attachments: { filename: string; content: string }[] | undefined;
+
+      // Generate chart ZIP attachment for setlist emails
+      if (contentType === "setlist" && selectedSetlistId && setlistItems && songs && chartUrls) {
+        const setlistSongs = songs.filter(
+          (s: any) => setlistSongIds.has(s._id) && s.chartFileId
+        );
+        if (setlistSongs.length > 0) {
+          setPreparing(true);
+          const zip = new JSZip();
+          const fetchPromises: Promise<void>[] = [];
+
+          for (const song of setlistSongs) {
+            const chartUrl = chartUrls[song.chartFileId];
+            if (!chartUrl) continue;
+
+            const promise = (async () => {
+              try {
+                const response = await fetch(chartUrl);
+                if (!response.ok) return;
+                const ct = response.headers.get("content-type") || "";
+                let ext = "pdf";
+                if (ct.includes("image/png")) ext = "png";
+                else if (ct.includes("image/jpeg") || ct.includes("image/jpg")) ext = "jpg";
+                else if (ct.includes("image/gif")) ext = "gif";
+                else if (ct.includes("image/webp")) ext = "webp";
+                const blob = await response.blob();
+                const filename = `${song.title.replace(/[^a-z0-9\s\-_]/gi, "").replace(/\s+/g, "-")}-${song.artist.replace(/[^a-z0-9\s\-_]/gi, "").replace(/\s+/g, "-")}.${ext}`;
+                zip.file(filename, blob);
+              } catch (e) {
+                console.error(`Failed to fetch chart for ${song.title}:`, e);
+              }
+            })();
+            fetchPromises.push(promise);
+          }
+
+          await Promise.all(fetchPromises);
+          const base64 = await zip.generateAsync({ type: "base64" });
+
+          if (base64.length <= 27_000_000) {
+            attachments = [
+              {
+                filename: `${(selectedSetlist?.name ?? bandName).replace(/[^a-zA-Z0-9]/g, "-")}-Charts.zip`,
+                content: base64
+              }
+            ];
+          }
+        }
+      }
 
       // Generate PDF attachment for song list
       if (contentType === "song-list" && songs) {
