@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useBandsList } from "@/lib/convex";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -15,7 +16,15 @@ export default function DashboardPage() {
   const searchParams = useSearchParams();
   const bands = useBandsList();
   const { isLoading, isExpired } = useSubscription();
+  const { isMember, isLoading: memberLoading, session: memberSession } = useMemberAuth();
   const verifyAttempted = useRef(false);
+
+  // If a member somehow reaches /dashboard, redirect to their band
+  useEffect(() => {
+    if (!memberLoading && isMember && memberSession) {
+      router.replace(`/${memberSession.band.slug}/songs`);
+    }
+  }, [memberLoading, isMember, memberSession, router]);
 
   // After Stripe checkout, verify subscription status directly
   useEffect(() => {
@@ -40,16 +49,18 @@ export default function DashboardPage() {
     }
   }, [searchParams, router]);
 
-  // Redirect to subscribe if subscription expired
+  // Redirect to subscribe if subscription expired (never for members)
+  const hasMemberCookie = typeof document !== "undefined" &&
+    document.cookie.includes("clo_member_token");
   useEffect(() => {
-    if (!isLoading && isExpired) {
+    if (!isLoading && isExpired && !isMember && !memberLoading && !hasMemberCookie) {
       // Don't redirect if we're in the middle of verifying checkout
       const isCheckoutSuccess = searchParams.get("checkout") === "success";
       if (!isCheckoutSuccess) {
         router.push("/subscribe");
       }
     }
-  }, [isLoading, isExpired, router, searchParams]);
+  }, [isLoading, isExpired, isMember, memberLoading, hasMemberCookie, router, searchParams]);
 
   // Auto-redirect to first band if only one
   useEffect(() => {

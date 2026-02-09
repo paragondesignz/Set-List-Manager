@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useMemberAuth } from "@/hooks/useMemberAuth";
 
 const features = [
   "Unlimited bands & song libraries",
@@ -21,7 +22,23 @@ const features = [
 export default function SubscribePage() {
   const router = useRouter();
   const { user, isActive, isTrial, isExpired, daysLeft } = useSubscription();
+  const { isMember, isLoading: memberLoading, session: memberSession } = useMemberAuth();
   const [loading, setLoading] = useState(false);
+
+  // Members should never see the subscribe page — redirect to their band
+  useEffect(() => {
+    if (!memberLoading && isMember && memberSession) {
+      router.replace(`/${memberSession.band.slug}/songs`);
+    }
+  }, [memberLoading, isMember, memberSession, router]);
+
+  if (isMember || memberLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   const handleSubscribe = async () => {
     if (!user) return;

@@ -108,12 +108,15 @@ export default function BandLayout({
   const { isLoading: subLoading, isExpired, isTrial, daysLeft } = useSubscription();
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
-  // Redirect to subscribe if admin subscription expired (only after member auth resolves)
+  // Redirect to subscribe if admin subscription expired
+  // Never redirect if there's any sign of a member cookie (even before auth resolves)
+  const hasMemberCookie = typeof document !== "undefined" &&
+    document.cookie.includes("clo_member_token");
   useEffect(() => {
-    if (!memberLoading && !isMember && !subLoading && isExpired) {
+    if (!memberLoading && !isMember && !hasMemberCookie && !subLoading && isExpired) {
       router.push("/subscribe");
     }
-  }, [memberLoading, isMember, subLoading, isExpired, router]);
+  }, [memberLoading, isMember, hasMemberCookie, subLoading, isExpired, router]);
 
   // Redirect member to their own band if they navigate elsewhere
   useEffect(() => {
@@ -168,7 +171,7 @@ export default function BandLayout({
     );
   }
 
-  if (isExpired) {
+  if (isExpired && !hasMemberCookie) {
     return null; // Will redirect
   }
 
