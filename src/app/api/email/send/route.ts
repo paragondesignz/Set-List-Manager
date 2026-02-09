@@ -24,6 +24,7 @@ const BodySchema = z.object({
   html: z.string().min(1),
   from: z.string().optional(),
   replyTo: z.string().email().optional(),
+  senderName: z.string().optional(),
   attachments: z.array(AttachmentSchema).optional()
 });
 

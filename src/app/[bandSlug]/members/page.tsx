@@ -10,7 +10,9 @@ import {
   useArchiveBandMember,
   useSongsList,
   useSetlistsList,
-  useSetlistItems
+  useSetlistItems,
+  useCurrentUser,
+  useMultipleStorageUrls
 } from "@/lib/convex";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +57,7 @@ import {
 import { toast } from "sonner";
 import { pdf } from "@react-pdf/renderer";
 import { SongListPDF } from "@/components/export/song-list-pdf";
+import JSZip from "jszip";
 
 type Member = {
   _id: string;
@@ -290,6 +293,7 @@ export default function MembersPage() {
           onOpenChange={setEmailDialogOpen}
           bandId={band._id}
           bandName={band.name}
+          bandSlug={bandSlug}
           recipients={activeMembers.filter((m: Member) => selectedMembers.has(m._id))}
         />
       )}
@@ -399,12 +403,14 @@ function EmailDialog({
   onOpenChange,
   bandId,
   bandName,
+  bandSlug,
   recipients
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bandId: string;
   bandName: string;
+  bandSlug: string;
   recipients: Member[];
 }) {
   const [contentType, setContentType] = useState<EmailContentType>("setlist");
@@ -413,10 +419,18 @@ function EmailDialog({
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [preparing, setPreparing] = useState(false);
 
+  const user = useCurrentUser();
   const songs = useSongsList({ bandId: bandId as any, includeArchived: false });
   const setlists = useSetlistsList({ bandId: bandId as any, includeArchived: false });
   const setlistItems = useSetlistItems(selectedSetlistId || null);
+
+  // Get chart storage URLs for selected songs
+  const chartStorageIds = songs
+    ?.filter((s: any) => selectedSongIds.has(s._id) && s.chartFileId)
+    .map((s: any) => s.chartFileId as string) ?? [];
+  const chartUrls = useMultipleStorageUrls(chartStorageIds);
 
   const selectedSetlist = setlists?.find((s: any) => s._id === selectedSetlistId);
 
@@ -503,6 +517,12 @@ function EmailDialog({
         html += `<p style="color: #92400e; margin: 0; font-size: 14px;"><strong>Notes:</strong> ${selectedSetlist.notes}</p>`;
         html += `</div>`;
       }
+
+      // Setlist link
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://setlistcreator.co.nz";
+      html += `<div style="text-align: center; margin-bottom: 24px;">`;
+      html += `<a href="${siteUrl}/${bandSlug}/setlists/${selectedSetlistId}" style="display: inline-block; background: #4f46e5; color: #ffffff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 500;">View Setlist Online</a>`;
+      html += `</div>`;
     }
 
     if (contentType === "song-list" && songs) {
@@ -523,7 +543,7 @@ function EmailDialog({
         html += `<li style="margin-bottom: 4px;">${song.title} — ${song.artist}</li>`;
       }
       html += `</ul>`;
-      html += `<p style="color: #9ca3af; margin: 16px 0 0; font-size: 12px; font-style: italic;">Charts are attached to this email as PDF files.</p>`;
+      html += `<p style="color: #9ca3af; margin: 16px 0 0; font-size: 12px; font-style: italic;">${songsWithCharts.length} chart${songsWithCharts.length !== 1 ? "s" : ""} attached as ZIP.</p>`;
       html += `</div>`;
     }
 
@@ -540,7 +560,8 @@ function EmailDialog({
     html += `</div>`;
 
     html += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />`;
-    html += `<p style="color: #9ca3af; font-size: 12px; margin: 0;">Sent via Set List Creator</p>`;
+    const senderLabel = user?.name || user?.email || "Unknown";
+    html += `<p style="color: #9ca3af; font-size: 12px; margin: 0;">Sent by ${senderLabel} via Set List Creator</p>`;
     html += `</div>`;
 
     return html;
@@ -578,12 +599,13 @@ function EmailDialog({
 
   const handleSend = async () => {
     if (!canSend()) return;
-    setSending(true);
 
     try {
-      // Generate PDF attachment for song list
       let attachments: { filename: string; content: string }[] | undefined;
+
+      // Generate PDF attachment for song list
       if (contentType === "song-list" && songs) {
+        setPreparing(true);
         const doc = <SongListPDF bandName={bandName} songs={songs} />;
         const blob = await pdf(doc).toBlob();
         const buffer = await blob.arrayBuffer();
@@ -598,6 +620,66 @@ function EmailDialog({
         ];
       }
 
+      // Generate ZIP attachment for charts
+      if (contentType === "charts" && songs && chartUrls) {
+        setPreparing(true);
+        const zip = new JSZip();
+        const selectedSongs = songs.filter(
+          (s: any) => selectedSongIds.has(s._id) && s.chartFileId
+        );
+
+        const fetchPromises: Promise<void>[] = [];
+        for (const song of selectedSongs) {
+          const chartUrl = chartUrls[song.chartFileId];
+          if (!chartUrl) continue;
+
+          const promise = (async () => {
+            try {
+              const response = await fetch(chartUrl);
+              if (!response.ok) return;
+
+              const contentTypeHeader = response.headers.get("content-type") || "";
+              let extension = "pdf";
+              if (contentTypeHeader.includes("image/png")) extension = "png";
+              else if (contentTypeHeader.includes("image/jpeg") || contentTypeHeader.includes("image/jpg")) extension = "jpg";
+              else if (contentTypeHeader.includes("image/gif")) extension = "gif";
+              else if (contentTypeHeader.includes("image/webp")) extension = "webp";
+
+              const blob = await response.blob();
+              const filename = `${song.title.replace(/[^a-z0-9\s\-_]/gi, "").replace(/\s+/g, "-")}-${song.artist.replace(/[^a-z0-9\s\-_]/gi, "").replace(/\s+/g, "-")}.${extension}`;
+              zip.file(filename, blob);
+            } catch (e) {
+              console.error(`Failed to fetch chart for ${song.title}:`, e);
+            }
+          })();
+          fetchPromises.push(promise);
+        }
+
+        await Promise.all(fetchPromises);
+        const base64 = await zip.generateAsync({ type: "base64" });
+
+        // ~27MB base64 ≈ 20MB decoded
+        if (base64.length > 27_000_000) {
+          toast.error("Charts package is too large to email", {
+            description: "Try using the Band Pack download instead."
+          });
+          setPreparing(false);
+          return;
+        }
+
+        attachments = [
+          {
+            filename: `${bandName.replace(/[^a-zA-Z0-9]/g, "-")}-Charts.zip`,
+            content: base64
+          }
+        ];
+      }
+
+      setPreparing(false);
+      setSending(true);
+
+      const senderName = user?.name || user?.email || undefined;
+
       const response = await fetch("/api/email/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -605,6 +687,7 @@ function EmailDialog({
           to: recipients.map((r) => r.email),
           subject: generateSubject(),
           html: generateEmailContent(),
+          ...(senderName ? { senderName } : {}),
           ...(attachments ? { attachments } : {})
         })
       });
@@ -619,6 +702,7 @@ function EmailDialog({
     } catch (e: any) {
       toast.error("Failed to send email", { description: e?.message });
     } finally {
+      setPreparing(false);
       setSending(false);
     }
   };
@@ -793,8 +877,10 @@ function EmailDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSend} disabled={!canSend() || sending}>
-            {sending ? (
+          <Button onClick={handleSend} disabled={!canSend() || sending || preparing}>
+            {preparing ? (
+              "Preparing attachments..."
+            ) : sending ? (
               "Sending..."
             ) : (
               <>
