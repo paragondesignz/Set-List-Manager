@@ -582,6 +582,7 @@ function SingleMemberEmailDialog({
           to: [member.email],
           subject: generateSubject(),
           html: generateEmailContent(),
+          senderName: bandName,
           ...(attachments ? { attachments } : {})
         })
       });

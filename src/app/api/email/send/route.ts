@@ -58,7 +58,9 @@ export async function POST(req: Request) {
     }));
 
     const { data, error } = await resendClient.emails.send({
-      from: parsed.data.from ?? "Set List Creator <noreply@setlistcreator.co.nz>",
+      from: parsed.data.senderName
+        ? `${parsed.data.senderName} via Set List Creator <noreply@setlistcreator.co.nz>`
+        : parsed.data.from ?? "Set List Creator <noreply@setlistcreator.co.nz>",
       to: parsed.data.to,
       subject: parsed.data.subject,
       html: parsed.data.html,

@@ -397,7 +397,8 @@ export default function GigDetailPage() {
         body: JSON.stringify({
           to: recipients,
           subject: `${band?.name ?? "Band"} — Gig Invite: ${gig.name}`,
-          html
+          html,
+          senderName: band?.name
         })
       });
 
@@ -544,6 +545,7 @@ export default function GigDetailPage() {
           to: recipients,
           subject: `${band?.name ?? "Band"} — Gig Pack: ${gig.name}`,
           html,
+          senderName: band?.name,
           attachments: [{ filename: zipFileName, content: base64 }]
         })
       });

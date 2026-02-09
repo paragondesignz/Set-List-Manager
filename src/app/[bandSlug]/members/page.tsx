@@ -731,8 +731,6 @@ function EmailDialog({
       setPreparing(false);
       setSending(true);
 
-      const senderName = user?.name || user?.email || undefined;
-
       const response = await fetch("/api/email/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -740,7 +738,7 @@ function EmailDialog({
           to: recipients.map((r) => r.email),
           subject: generateSubject(),
           html: generateEmailContent(),
-          ...(senderName ? { senderName } : {}),
+          senderName: bandName,
           ...(attachments ? { attachments } : {})
         })
       });
