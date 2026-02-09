@@ -53,6 +53,8 @@ import {
   Music
 } from "lucide-react";
 import { toast } from "sonner";
+import { pdf } from "@react-pdf/renderer";
+import { SongListPDF } from "@/components/export/song-list-pdf";
 
 type Member = {
   _id: string;
@@ -504,22 +506,10 @@ function EmailDialog({
     }
 
     if (contentType === "song-list" && songs) {
-      const sortedSongs = [...songs].sort((a: any, b: any) => a.title.localeCompare(b.title));
       html += `<div style="background: #f9fafb; border-radius: 8px; padding: 20px;">`;
-      html += `<h3 style="color: #1a1a1a; margin: 0 0 16px;">Master Song List</h3>`;
-      html += `<p style="color: #6b7280; margin: 0 0 16px; font-size: 14px;">${sortedSongs.length} songs</p>`;
-      html += `<table style="width: 100%; border-collapse: collapse; font-size: 14px;">`;
-      html += `<thead><tr style="border-bottom: 1px solid #e5e7eb;">`;
-      html += `<th style="text-align: left; padding: 8px 0; color: #6b7280;">Title</th>`;
-      html += `<th style="text-align: left; padding: 8px 0; color: #6b7280;">Artist</th>`;
-      html += `</tr></thead><tbody>`;
-      for (const song of sortedSongs) {
-        html += `<tr style="border-bottom: 1px solid #f3f4f6;">`;
-        html += `<td style="padding: 8px 0; color: #1a1a1a;">${song.title}</td>`;
-        html += `<td style="padding: 8px 0; color: #6b7280;">${song.artist}</td>`;
-        html += `</tr>`;
-      }
-      html += `</tbody></table></div>`;
+      html += `<h3 style="color: #1a1a1a; margin: 0 0 8px;">Master Song List</h3>`;
+      html += `<p style="color: #6b7280; margin: 0; font-size: 14px;">${songs.length} songs — see the attached PDF for the full list.</p>`;
+      html += `</div>`;
     }
 
     if (contentType === "charts" && songs) {
@@ -536,6 +526,18 @@ function EmailDialog({
       html += `<p style="color: #9ca3af; margin: 16px 0 0; font-size: 12px; font-style: italic;">Charts are attached to this email as PDF files.</p>`;
       html += `</div>`;
     }
+
+    // Member login instructions
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://setlistcreator.co.nz";
+    html += `<div style="background: #f0f4ff; border-radius: 8px; padding: 16px; margin-top: 24px;">`;
+    html += `<h4 style="color: #1a1a1a; margin: 0 0 8px; font-size: 14px;">Access Your Band Account</h4>`;
+    html += `<p style="color: #4b5563; margin: 0 0 8px; font-size: 13px;">You can view setlists, songs, and charts online by logging in to your band member account:</p>`;
+    html += `<ol style="color: #4b5563; margin: 0; padding-left: 20px; font-size: 13px;">`;
+    html += `<li style="margin-bottom: 4px;">Go to <a href="${siteUrl}/member-login" style="color: #4f46e5; text-decoration: underline;">${siteUrl}/member-login</a></li>`;
+    html += `<li style="margin-bottom: 4px;">Enter your access token (provided by your band leader)</li>`;
+    html += `<li style="margin-bottom: 0;">Browse songs, setlists, and charts for ${bandName}</li>`;
+    html += `</ol>`;
+    html += `</div>`;
 
     html += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />`;
     html += `<p style="color: #9ca3af; font-size: 12px; margin: 0;">Sent via Set List Creator</p>`;
@@ -579,13 +581,31 @@ function EmailDialog({
     setSending(true);
 
     try {
+      // Generate PDF attachment for song list
+      let attachments: { filename: string; content: string }[] | undefined;
+      if (contentType === "song-list" && songs) {
+        const doc = <SongListPDF bandName={bandName} songs={songs} />;
+        const blob = await pdf(doc).toBlob();
+        const buffer = await blob.arrayBuffer();
+        const base64 = btoa(
+          new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+        );
+        attachments = [
+          {
+            filename: `${bandName.replace(/[^a-zA-Z0-9]/g, "-")}-Song-List.pdf`,
+            content: base64
+          }
+        ];
+      }
+
       const response = await fetch("/api/email/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to: recipients.map((r) => r.email),
           subject: generateSubject(),
-          html: generateEmailContent()
+          html: generateEmailContent(),
+          ...(attachments ? { attachments } : {})
         })
       });
 

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Music, ListMusic, Zap, FileText, Users, Layers, Check } from "lucide-react";
+import { Music, ListMusic, Zap, FileText, Users, Layers, Check, LogIn } from "lucide-react";
 
 const features = [
   {
@@ -76,6 +76,34 @@ const planFeatures = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
+      {/* Nav */}
+      <nav className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Image
+            src="/logo.webp"
+            alt="Set List Creator"
+            width={140}
+            height={38}
+            priority
+          />
+          <div className="flex items-center gap-2">
+            <Link
+              href="/member-login"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Band Member Login
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium border border-border hover:bg-accent transition-colors"
+            >
+              <LogIn className="h-3.5 w-3.5" />
+              Sign In
+            </Link>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 brand-gradient opacity-[0.04]" />
@@ -86,7 +114,6 @@ export default function LandingPage() {
               alt="Set List Creator"
               width={280}
               height={80}
-              priority
             />
           </div>
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">

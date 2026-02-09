@@ -13,12 +13,18 @@ function getResend() {
   return resend;
 }
 
+const AttachmentSchema = z.object({
+  filename: z.string(),
+  content: z.string() // base64-encoded
+});
+
 const BodySchema = z.object({
   to: z.array(z.string().email()),
   subject: z.string().min(1),
   html: z.string().min(1),
   from: z.string().optional(),
-  replyTo: z.string().email().optional()
+  replyTo: z.string().email().optional(),
+  attachments: z.array(AttachmentSchema).optional()
 });
 
 function jsonError(status: number, message: string) {
@@ -44,12 +50,19 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Convert base64 attachments to Buffers for Resend
+    const attachments = parsed.data.attachments?.map((att) => ({
+      filename: att.filename,
+      content: Buffer.from(att.content, "base64")
+    }));
+
     const { data, error } = await resendClient.emails.send({
       from: parsed.data.from ?? "Set List Creator <noreply@setlistcreator.co.nz>",
       to: parsed.data.to,
       subject: parsed.data.subject,
       html: parsed.data.html,
-      replyTo: parsed.data.replyTo
+      replyTo: parsed.data.replyTo,
+      ...(attachments && attachments.length > 0 ? { attachments } : {})
     });
 
     if (error) {

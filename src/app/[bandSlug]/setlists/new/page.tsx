@@ -120,25 +120,6 @@ export default function NewSetlistPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium">Name</label>
-          <Input
-            placeholder="e.g., Friday Night at The Venue"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium">Gig Date (optional)</label>
-          <Input
-            type="date"
-            value={gigDate}
-            onChange={(e) => setGigDate(e.target.value)}
-          />
-        </div>
-
         {templates && templates.length > 0 && (
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Template (optional)</label>
@@ -163,6 +144,25 @@ export default function NewSetlistPage() {
             </Select>
           </div>
         )}
+
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">Name</label>
+          <Input
+            placeholder="e.g., Friday Night at The Venue"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">Gig Date (optional)</label>
+          <Input
+            type="date"
+            value={gigDate}
+            onChange={(e) => setGigDate(e.target.value)}
+          />
+        </div>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
