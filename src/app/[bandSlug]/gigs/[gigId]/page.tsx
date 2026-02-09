@@ -53,8 +53,6 @@ import {
   MapPin,
   Phone,
   Mail,
-  User,
-  Shirt,
   ListMusic,
   Pencil,
   Trash2,
@@ -741,13 +739,13 @@ export default function GigDetailPage() {
 
       {/* Info Cards */}
       <div className="grid gap-4 sm:grid-cols-2">
-        {/* Schedule */}
-        {(gig.loadInTime || gig.soundcheckTime || gig.startTime || gig.endTime) && (
+        {/* Gig Info (schedule + details + linked setlist) */}
+        {(gig.loadInTime || gig.soundcheckTime || gig.startTime || gig.endTime || gig.dressCode || gig.description || gig.setlistId) ? (
           <Card>
             <CardHeader className="py-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                Schedule
+                Gig Info
               </CardTitle>
             </CardHeader>
             <CardContent className="py-3 pt-0 space-y-1">
@@ -775,12 +773,67 @@ export default function GigDetailPage() {
                   {formatTime(gig.endTime)}
                 </p>
               )}
+              {(gig.dressCode || gig.description) && (gig.loadInTime || gig.soundcheckTime || gig.startTime || gig.endTime) && (
+                <div className="border-t border-border my-2 !mt-3" />
+              )}
+              {gig.dressCode && (
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Dress code:</span>{" "}
+                  {gig.dressCode}
+                </p>
+              )}
+              {gig.description && (
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {gig.description}
+                </p>
+              )}
+              {gig.setlistId && (gig.loadInTime || gig.soundcheckTime || gig.startTime || gig.endTime || gig.dressCode || gig.description) && (
+                <div className="border-t border-border my-2 !mt-3" />
+              )}
+              {gig.setlistId ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ListMusic className="h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="text-sm font-medium">
+                      {linkedSetlist?.name ?? (isMember ? "Setlist linked" : "Loading...")}
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/${bandSlug}/setlists/${gig.setlistId}`}>
+                      View Setlist
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <ListMusic className="h-3.5 w-3.5 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    No setlist linked
+                    {!isMember && " — click Edit to link one"}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <ListMusic className="h-4 w-4" />
+                Linked Setlist
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-3 pt-0">
+              <p className="text-sm text-muted-foreground">
+                No setlist linked to this gig
+                {!isMember && " — click Edit to link one"}
+              </p>
             </CardContent>
           </Card>
         )}
 
-        {/* Venue */}
-        {(gig.venueName || gig.venueAddress) && (
+        {/* Venue + Contact */}
+        {(gig.venueName || gig.venueAddress || gig.contactName || gig.contactPhone || gig.contactEmail) && (
           <Card>
             <CardHeader className="py-3">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -814,8 +867,29 @@ export default function GigDetailPage() {
                   {gig.venueNotes}
                 </p>
               )}
+              {(gig.contactName || gig.contactPhone || gig.contactEmail) && (
+                <>
+                  <div className="border-t border-border my-2 !mt-3" />
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Contact</p>
+                  {gig.contactName && (
+                    <p className="text-sm font-medium">{gig.contactName}</p>
+                  )}
+                  {gig.contactPhone && (
+                    <p className="text-sm flex items-center gap-1">
+                      <Phone className="h-3 w-3 text-muted-foreground" />
+                      {gig.contactPhone}
+                    </p>
+                  )}
+                  {gig.contactEmail && (
+                    <p className="text-sm flex items-center gap-1">
+                      <Mail className="h-3 w-3 text-muted-foreground" />
+                      {gig.contactEmail}
+                    </p>
+                  )}
+                </>
+              )}
               {gig.venueAddress && (
-                <div className="mt-3 aspect-square">
+                <div className="mt-3 aspect-[4/3]">
                   <iframe
                     src={`https://maps.google.com/maps?q=${encodeURIComponent(gig.venueAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                     width="100%"
@@ -831,97 +905,7 @@ export default function GigDetailPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Contact */}
-        {(gig.contactName || gig.contactPhone || gig.contactEmail) && (
-          <Card>
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Contact
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="py-3 pt-0 space-y-1">
-              {gig.contactName && (
-                <p className="text-sm font-medium">{gig.contactName}</p>
-              )}
-              {gig.contactPhone && (
-                <p className="text-sm flex items-center gap-1">
-                  <Phone className="h-3 w-3 text-muted-foreground" />
-                  {gig.contactPhone}
-                </p>
-              )}
-              {gig.contactEmail && (
-                <p className="text-sm flex items-center gap-1">
-                  <Mail className="h-3 w-3 text-muted-foreground" />
-                  {gig.contactEmail}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Dress Code & Description */}
-        {(gig.dressCode || gig.description) && (
-          <Card>
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Shirt className="h-4 w-4" />
-                Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="py-3 pt-0 space-y-2">
-              {gig.dressCode && (
-                <p className="text-sm">
-                  <span className="text-muted-foreground">Dress code:</span>{" "}
-                  {gig.dressCode}
-                </p>
-              )}
-              {gig.description && (
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {gig.description}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
       </div>
-
-      {/* Linked Setlist */}
-      <Card>
-        <CardHeader className="py-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <ListMusic className="h-4 w-4" />
-            Linked Setlist
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="py-3 pt-0">
-          {gig.setlistId ? (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">
-                  {linkedSetlist?.name ?? (isMember ? "Setlist linked" : "Loading...")}
-                </p>
-                {linkedSetlist?.gigDate && (
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(linkedSetlist.gigDate).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`/${bandSlug}/setlists/${gig.setlistId}`}>
-                  View Setlist
-                </Link>
-              </Button>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No setlist linked to this gig
-              {!isMember && " — click Edit to link one"}
-            </p>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Member Availability */}
       <Card>
