@@ -7,6 +7,7 @@ import {
   useBandBySlug,
   useGig,
   useGigMembersList,
+  useBandMembersList,
   useSetlist,
   useSetlistsList,
   useUpdateGig,
@@ -14,14 +15,18 @@ import {
   useArchiveGig,
   useRemoveGig,
   useAdminUpdateGigMember,
+  useAddGigMember,
+  useRemoveGigMember,
   useMemberGig,
-  useMemberRespondToGig
+  useMemberRespondToGig,
+  useCurrentUser
 } from "@/lib/convex";
 import { useMemberAuth } from "@/hooks/useMemberAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -52,7 +57,10 @@ import {
   Trash2,
   Check,
   X,
-  HelpCircle
+  HelpCircle,
+  UserPlus,
+  Send,
+  UserMinus
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -98,6 +106,9 @@ export default function GigDetailPage() {
   const adminSetlists = useSetlistsList(
     !isMember && band ? { bandId: band._id } : null
   );
+  const bandMembers = useBandMembersList(
+    !isMember && band ? { bandId: band._id } : null
+  );
 
   // Member queries
   const memberGig = useMemberGig(
@@ -116,12 +127,18 @@ export default function GigDetailPage() {
   const archiveGig = useArchiveGig();
   const removeGig = useRemoveGig();
   const adminUpdateMember = useAdminUpdateGigMember();
+  const addGigMember = useAddGigMember();
+  const removeGigMember = useRemoveGigMember();
   const memberRespond = useMemberRespondToGig();
+  const currentUser = useCurrentUser();
 
   // Dialog states
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selectedInvitees, setSelectedInvitees] = useState<Set<string>>(new Set());
+  const [inviting, setInviting] = useState(false);
 
   // Edit form
   const [editName, setEditName] = useState("");
@@ -270,6 +287,106 @@ export default function GigDetailPage() {
       toast.error("Failed to respond", { description: e?.message });
     } finally {
       setResponding(false);
+    }
+  };
+
+  // Compute which band members are NOT yet on this gig
+  const gigMemberIds = new Set(
+    (gigMembers ?? []).map((gm: any) => gm.memberId as string)
+  );
+  const availableToInvite = (bandMembers ?? []).filter(
+    (m: any) => !m.archivedAt && !gigMemberIds.has(m._id)
+  );
+
+  const handleInviteMembers = async () => {
+    if (selectedInvitees.size === 0) return;
+    setInviting(true);
+
+    try {
+      // Add each member to the gig
+      const membersToInvite = (bandMembers ?? []).filter((m: any) =>
+        selectedInvitees.has(m._id)
+      );
+
+      for (const member of membersToInvite) {
+        await addGigMember({
+          gigId: gigId as any,
+          memberId: member._id as any
+        });
+      }
+
+      // Send email invites
+      const dateStr = new Date(gig.date).toLocaleDateString("en-NZ", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://setlistcreator.co.nz";
+      const senderLabel = currentUser?.name || currentUser?.email || "Your band leader";
+
+      let html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">`;
+      html += `<h2 style="color: #1a1a1a; margin-bottom: 16px;">You've been invited to a gig!</h2>`;
+      html += `<div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">`;
+      html += `<h3 style="color: #1a1a1a; margin: 0 0 8px;">${gig.name}</h3>`;
+      html += `<p style="color: #6b7280; margin: 0 0 4px; font-size: 14px;">${dateStr}</p>`;
+      if (gig.venueName) {
+        html += `<p style="color: #6b7280; margin: 0 0 4px; font-size: 14px;">${gig.venueName}${gig.venueAddress ? ` — ${gig.venueAddress}` : ""}</p>`;
+      }
+      if (gig.startTime) {
+        html += `<p style="color: #6b7280; margin: 0 0 4px; font-size: 14px;">Start: ${gig.startTime}${gig.endTime ? ` — End: ${gig.endTime}` : ""}</p>`;
+      }
+      if (gig.dressCode) {
+        html += `<p style="color: #6b7280; margin: 0; font-size: 14px;">Dress code: ${gig.dressCode}</p>`;
+      }
+      if (gig.description) {
+        html += `<p style="color: #6b7280; margin: 8px 0 0; font-size: 14px; white-space: pre-wrap;">${gig.description}</p>`;
+      }
+      html += `</div>`;
+
+      html += `<p style="color: #374151; margin-bottom: 24px; font-size: 14px;">Log in to your band member account to confirm your availability.</p>`;
+      html += `<div style="text-align: center; margin-bottom: 24px;">`;
+      html += `<a href="${siteUrl}/member-login" style="display: inline-block; background: #4f46e5; color: #ffffff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 500;">Log In to Respond</a>`;
+      html += `</div>`;
+
+      html += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />`;
+      html += `<p style="color: #9ca3af; font-size: 12px; margin: 0;">Sent by ${senderLabel} via Set List Creator</p>`;
+      html += `</div>`;
+
+      const recipients = membersToInvite.map((m: any) => m.email);
+
+      await fetch("/api/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: recipients,
+          subject: `${band?.name ?? "Band"} — Gig Invite: ${gig.name}`,
+          html
+        })
+      });
+
+      toast.success(
+        `Invited ${membersToInvite.length} member${membersToInvite.length !== 1 ? "s" : ""}`
+      );
+      setInviteOpen(false);
+      setSelectedInvitees(new Set());
+    } catch (e: any) {
+      toast.error("Failed to invite members", { description: e?.message });
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleRemoveGigMember = async (memberId: string) => {
+    try {
+      await removeGigMember({
+        gigId: gigId as any,
+        memberId: memberId as any
+      });
+      toast.success("Member removed from gig");
+    } catch (e: any) {
+      toast.error("Failed to remove member", { description: e?.message });
     }
   };
 
@@ -607,9 +724,25 @@ export default function GigDetailPage() {
         <CardHeader className="py-3">
           <CardTitle className="text-sm flex items-center justify-between">
             <span>Member Availability</span>
-            <span className="font-normal text-muted-foreground">
-              {confirmedCount} of {displayMembers.length} confirmed
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-normal text-muted-foreground">
+                {confirmedCount} of {displayMembers.length} confirmed
+              </span>
+              {!isMember && availableToInvite.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    setSelectedInvitees(new Set());
+                    setInviteOpen(true);
+                  }}
+                >
+                  <UserPlus className="h-3 w-3 mr-1" />
+                  Invite
+                </Button>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="py-3 pt-0">
@@ -639,21 +772,31 @@ export default function GigDetailPage() {
                     </p>
                   )}
                   {!isMember && (
-                    <Select
-                      value={gm.status}
-                      onValueChange={(v) =>
-                        handleAdminMemberUpdate(gm.memberId, v as any)
-                      }
-                    >
-                      <SelectTrigger className="w-[120px] h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="declined">Declined</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-1">
+                      <Select
+                        value={gm.status}
+                        onValueChange={(v) =>
+                          handleAdminMemberUpdate(gm.memberId, v as any)
+                        }
+                      >
+                        <SelectTrigger className="w-[120px] h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="declined">Declined</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleRemoveGigMember(gm.memberId)}
+                      >
+                        <UserMinus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -871,6 +1014,97 @@ export default function GigDetailPage() {
                 </Button>
                 <Button variant="destructive" onClick={handleDelete}>
                   Delete
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Invite Members Dialog */}
+          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Invite Members</DialogTitle>
+                <DialogDescription>
+                  Select band members to invite to this gig. They will receive
+                  an email notification.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4 space-y-3">
+                {availableToInvite.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    All band members have already been invited.
+                  </p>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <Checkbox
+                        checked={
+                          selectedInvitees.size === availableToInvite.length &&
+                          availableToInvite.length > 0
+                        }
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedInvitees(
+                              new Set(availableToInvite.map((m: any) => m._id))
+                            );
+                          } else {
+                            setSelectedInvitees(new Set());
+                          }
+                        }}
+                      />
+                      <span className="text-sm font-medium">Select all</span>
+                    </div>
+                    {availableToInvite.map((member: any) => (
+                      <div
+                        key={member._id}
+                        className="flex items-center gap-3"
+                      >
+                        <Checkbox
+                          checked={selectedInvitees.has(member._id)}
+                          onCheckedChange={(checked) => {
+                            const next = new Set(selectedInvitees);
+                            if (checked) {
+                              next.add(member._id);
+                            } else {
+                              next.delete(member._id);
+                            }
+                            setSelectedInvitees(next);
+                          }}
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {member.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {member.role} — {member.email}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setInviteOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleInviteMembers}
+                  disabled={inviting || selectedInvitees.size === 0}
+                >
+                  {inviting ? (
+                    "Sending..."
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Invite {selectedInvitees.size > 0
+                        ? `(${selectedInvitees.size})`
+                        : ""}
+                    </>
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>

@@ -12,6 +12,8 @@ import type * as _utils_normalize from "../_utils/normalize.js";
 import type * as auth from "../auth.js";
 import type * as bandMembers from "../bandMembers.js";
 import type * as bands from "../bands.js";
+import type * as gigMembers from "../gigMembers.js";
+import type * as gigs from "../gigs.js";
 import type * as http from "../http.js";
 import type * as memberAccess from "../memberAccess.js";
 import type * as setlistItems from "../setlistItems.js";
@@ -32,6 +34,8 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   bandMembers: typeof bandMembers;
   bands: typeof bands;
+  gigMembers: typeof gigMembers;
+  gigs: typeof gigs;
   http: typeof http;
   memberAccess: typeof memberAccess;
   setlistItems: typeof setlistItems;
