@@ -77,6 +77,7 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
     // Members can only access specific read-only routes for their band
     const bandPrefix = `/${parsed.bandSlug}`;
     const memberAllowedRoutes = [
+      bandPrefix,                      // Band dashboard
       `${bandPrefix}/songs`,           // Song list (read-only)
       `${bandPrefix}/setlists`,        // Setlist list (finalised only)
       `${bandPrefix}/gigs`,            // Gig list (read-only)
@@ -120,7 +121,7 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
     if (!isExactMatch && !isSongDetail && !isSetlistDetail && !isGigDetail) {
       return nextjsMiddlewareRedirect(
         request,
-        `${bandPrefix}/songs`
+        bandPrefix
       );
     }
 

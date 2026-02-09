@@ -21,6 +21,98 @@ async function validateMemberToken(ctx: any, token: string) {
   return { member, band };
 }
 
+// Dashboard data for member homepage
+export const dashboard = query({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const access = await validateMemberToken(ctx, args.token);
+    if (!access) return null;
+
+    const now = Date.now();
+
+    // Upcoming gigs with member's own status
+    const allGigs = await ctx.db
+      .query("gigs")
+      .withIndex("by_bandId", (q: any) => q.eq("bandId", access.band._id))
+      .collect();
+
+    const upcomingGigs = allGigs
+      .filter(
+        (g) =>
+          g.date >= now &&
+          g.archivedAt === undefined &&
+          (g.status === "enquiry" || g.status === "confirmed")
+      )
+      .sort((a, b) => a.date - b.date);
+
+    const gigsWithStatus = await Promise.all(
+      upcomingGigs.map(async (gig) => {
+        const gigMembers = await ctx.db
+          .query("gigMembers")
+          .withIndex("by_gigId", (q: any) => q.eq("gigId", gig._id))
+          .collect();
+
+        const myGigMember = gigMembers.find(
+          (gm) => gm.memberId === access.member._id
+        );
+
+        return {
+          _id: gig._id,
+          name: gig.name,
+          date: gig.date,
+          status: gig.status,
+          venueName: gig.venueName,
+          startTime: gig.startTime,
+          myStatus: myGigMember?.status ?? null,
+          myGigMemberId: myGigMember?._id ?? null
+        };
+      })
+    );
+
+    // Recent finalized setlists (limit 5)
+    const allSetlists = await ctx.db
+      .query("setlists")
+      .withIndex("by_bandId_archivedAt", (q: any) =>
+        q.eq("bandId", access.band._id).eq("archivedAt", undefined)
+      )
+      .collect();
+
+    const recentSetlists = allSetlists
+      .filter((s) => s.status === "finalised")
+      .sort((a, b) => {
+        if (a.gigDate && b.gigDate) return b.gigDate - a.gigDate;
+        if (a.gigDate) return -1;
+        if (b.gigDate) return 1;
+        return b.createdAt - a.createdAt;
+      })
+      .slice(0, 5)
+      .map((s) => ({
+        _id: s._id,
+        name: s.name,
+        gigDate: s.gigDate,
+        status: s.status
+      }));
+
+    // Song count
+    const allSongs = await ctx.db
+      .query("songs")
+      .withIndex("by_bandId_archivedAt", (q: any) =>
+        q.eq("bandId", access.band._id).eq("archivedAt", undefined)
+      )
+      .collect();
+
+    // Gigs needing response
+    const needsResponse = gigsWithStatus.filter((g) => g.myStatus === "pending");
+
+    return {
+      upcomingGigs: gigsWithStatus,
+      recentSetlists,
+      songCount: allSongs.length,
+      needsResponse
+    };
+  },
+});
+
 // Get band info + member info for the authenticated member
 export const getMemberSession = query({
   args: { token: v.string() },

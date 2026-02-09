@@ -22,7 +22,7 @@ export function Header({ band }: HeaderProps) {
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-6">
         <div className="flex items-center gap-3">
           <Link
-            href="/dashboard"
+            href={band ? `/${band.slug}` : "/dashboard"}
             className="flex items-center"
           >
             <Image src="/logo.webp" alt="Set List Creator" width={120} height={32} />

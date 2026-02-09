@@ -298,6 +298,11 @@ export function useUpcomingGigs(args: { bandId: string; limit?: number } | null)
   return useQuery(q("gigs:upcoming"), args as any);
 }
 
+export function useUpcomingGigsWithRsvp(args: { bandId: string; limit?: number } | null) {
+  if (!args) return useQuery(q("gigs:upcomingWithRsvp"), "skip");
+  return useQuery(q("gigs:upcomingWithRsvp"), args as any);
+}
+
 export function useCreateGig() {
   return useMutation(q("gigs:create"));
 }
@@ -384,6 +389,11 @@ export function useMemberGig(token: string | null, gigId: string | null) {
 
 export function useMemberRespondToGig() {
   return useMutation(q("memberAccess:respondToGig"));
+}
+
+export function useMemberDashboard(token: string | null) {
+  if (!token) return useQuery(q("memberAccess:dashboard"), "skip");
+  return useQuery(q("memberAccess:dashboard"), { token } as any);
 }
 
 // ============================================================================

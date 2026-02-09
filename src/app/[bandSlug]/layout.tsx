@@ -41,7 +41,9 @@ function MemberHeader({
     <header className="sticky top-0 z-40 border-b border-border bg-background">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-6">
         <div className="flex items-center gap-3">
-          <Image src="/logo.webp" alt="Set List Creator" width={120} height={32} />
+          <Link href={`/${bandSlug}`} className="flex items-center">
+            <Image src="/logo.webp" alt="Set List Creator" width={120} height={32} />
+          </Link>
           <span className="text-border text-lg select-none">/</span>
           <span className="text-sm font-medium text-muted-foreground hidden sm:inline">
             {bandName}
@@ -121,7 +123,7 @@ export default function BandLayout({
   // Redirect member to their own band if they navigate elsewhere
   useEffect(() => {
     if (isMember && memberSession && memberSession.band.slug !== bandSlug) {
-      router.replace(`/${memberSession.band.slug}/songs`);
+      router.replace(`/${memberSession.band.slug}`);
     }
   }, [isMember, memberSession, bandSlug, router]);
 

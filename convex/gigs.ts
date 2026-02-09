@@ -88,6 +88,58 @@ export const upcoming = query({
   }
 });
 
+export const upcomingWithRsvp = query({
+  args: {
+    bandId: v.id("bands"),
+    limit: v.optional(v.number())
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const band = await ctx.db.get(args.bandId);
+    if (!band || band.userId !== userId) return [];
+
+    const now = Date.now();
+    const limit = args.limit ?? 10;
+
+    const all = await ctx.db
+      .query("gigs")
+      .withIndex("by_bandId", (q) => q.eq("bandId", args.bandId))
+      .collect();
+
+    const upcoming = all
+      .filter(
+        (g) =>
+          g.date >= now &&
+          g.archivedAt === undefined &&
+          (g.status === "enquiry" || g.status === "confirmed")
+      )
+      .sort((a, b) => a.date - b.date)
+      .slice(0, limit);
+
+    const enriched = await Promise.all(
+      upcoming.map(async (gig) => {
+        const gigMembers = await ctx.db
+          .query("gigMembers")
+          .withIndex("by_gigId", (q) => q.eq("gigId", gig._id))
+          .collect();
+
+        const confirmed = gigMembers.filter((gm) => gm.status === "confirmed").length;
+        const declined = gigMembers.filter((gm) => gm.status === "declined").length;
+        const pending = gigMembers.filter((gm) => gm.status === "pending").length;
+
+        return {
+          ...gig,
+          rsvp: { confirmed, declined, pending, total: gigMembers.length },
+          hasSetlist: gig.setlistId !== undefined
+        };
+      })
+    );
+
+    return enriched;
+  }
+});
+
 export const create = mutation({
   args: {
     bandId: v.id("bands"),
