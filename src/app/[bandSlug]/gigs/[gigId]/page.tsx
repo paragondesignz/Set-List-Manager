@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -10,6 +10,9 @@ import {
   useBandMembersList,
   useSetlist,
   useSetlistsList,
+  useSetlistItems,
+  useSongsList,
+  useMultipleStorageUrls,
   useUpdateGig,
   useUpdateGigStatus,
   useArchiveGig,
@@ -60,9 +63,14 @@ import {
   HelpCircle,
   UserPlus,
   Send,
-  UserMinus
+  UserMinus,
+  Package,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
+import { pdf } from "@react-pdf/renderer";
+import JSZip from "jszip";
+import { SetlistPDF } from "@/components/export/setlist-pdf";
 
 type GigStatus = "enquiry" | "confirmed" | "completed" | "cancelled";
 
@@ -79,6 +87,16 @@ function statusBadge(status: string) {
     default:
       return null;
   }
+}
+
+function formatTime(time: string): string {
+  const [hourStr, minuteStr] = time.split(":");
+  let hour = parseInt(hourStr, 10);
+  const minute = minuteStr ?? "00";
+  const ampm = hour >= 12 ? "PM" : "AM";
+  if (hour === 0) hour = 12;
+  else if (hour > 12) hour -= 12;
+  return `${hour}:${minute} ${ampm}`;
 }
 
 function memberStatusIcon(status: string) {
@@ -121,6 +139,25 @@ export default function GigDetailPage() {
     !isMember && gig?.setlistId ? (gig.setlistId as string) : null
   );
 
+  // Gig pack data (for sending to confirmed members)
+  const setlistItems = useSetlistItems(
+    !isMember && gig?.setlistId ? (gig.setlistId as string) : null
+  );
+  const allSongs = useSongsList(
+    !isMember && band && gig?.setlistId ? { bandId: band._id } : null
+  );
+  const chartStorageIds = useMemo(() => {
+    if (!setlistItems || !allSongs) return [];
+    const songMap = new Map((allSongs as any[]).map((s) => [s._id, s]));
+    const ids: string[] = [];
+    for (const item of setlistItems as any[]) {
+      const song = songMap.get(item.songId);
+      if (song?.chartFileId) ids.push(song.chartFileId);
+    }
+    return ids;
+  }, [setlistItems, allSongs]);
+  const chartUrls = useMultipleStorageUrls(chartStorageIds);
+
   // Mutations
   const updateGig = useUpdateGig();
   const updateStatus = useUpdateGigStatus();
@@ -158,6 +195,9 @@ export default function GigDetailPage() {
   const [editContactEmail, setEditContactEmail] = useState("");
   const [editDressCode, setEditDressCode] = useState("");
   const [editSetlistId, setEditSetlistId] = useState("");
+
+  // Gig pack
+  const [sendingGigPack, setSendingGigPack] = useState(false);
 
   // Member response
   const [respondNote, setRespondNote] = useState("");
@@ -390,6 +430,132 @@ export default function GigDetailPage() {
     }
   };
 
+  const sanitizeFilename = (name: string) =>
+    name.replace(/[^a-z0-9\s\-_]/gi, "").replace(/\s+/g, "-");
+
+  const handleSendGigPack = useCallback(async () => {
+    if (!linkedSetlist || !setlistItems || !allSongs || !gigMembers) return;
+
+    const confirmedMembers = gigMembers.filter(
+      (gm: any) => gm.status === "confirmed" && gm.memberEmail
+    );
+    if (confirmedMembers.length === 0) {
+      toast.error("No confirmed members to send to");
+      return;
+    }
+
+    setSendingGigPack(true);
+    try {
+      // Build songs map
+      const songsById = new Map(allSongs.map((s: any) => [s._id, s])) as Map<string, any>;
+
+      // Generate setlist PDF
+      const doc = (
+        <SetlistPDF
+          setlist={linkedSetlist as any}
+          items={setlistItems as any}
+          songsById={songsById}
+          options={{ showArtist: true, showIntensity: false, showEnergy: false }}
+        />
+      );
+      const pdfBlob = await pdf(doc).toBlob();
+
+      // Build ZIP
+      const zip = new JSZip();
+      zip.file(`${sanitizeFilename(linkedSetlist.name)}-setlist.pdf`, pdfBlob);
+
+      // Add charts
+      const chartsFolder = zip.folder("charts");
+      if (chartUrls && chartsFolder) {
+        const fetchPromises: Promise<void>[] = [];
+        for (const item of setlistItems) {
+          const song = songsById.get(item.songId);
+          if (!song?.chartFileId) continue;
+          const url = chartUrls[song.chartFileId];
+          if (!url) continue;
+          fetchPromises.push(
+            (async () => {
+              try {
+                const resp = await fetch(url);
+                if (!resp.ok) return;
+                const ct = resp.headers.get("content-type") || "";
+                let ext = "pdf";
+                if (ct.includes("image/png")) ext = "png";
+                else if (ct.includes("image/jpeg") || ct.includes("image/jpg")) ext = "jpg";
+                else if (ct.includes("image/gif")) ext = "gif";
+                const blob = await resp.blob();
+                chartsFolder.file(
+                  `${sanitizeFilename(song.title)}-${sanitizeFilename(song.artist)}.${ext}`,
+                  blob
+                );
+              } catch {}
+            })()
+          );
+        }
+        await Promise.all(fetchPromises);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+
+      // Convert to base64
+      const arrayBuffer = await zipBlob.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64 = btoa(binary);
+
+      // Build email
+      const dateStr = new Date(gig.date).toLocaleDateString("en-NZ", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+      const senderLabel = currentUser?.name || currentUser?.email || "Your band leader";
+
+      let html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">`;
+      html += `<h2 style="color: #1a1a1a; margin-bottom: 16px;">Gig Pack: ${gig.name}</h2>`;
+      html += `<div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">`;
+      html += `<p style="color: #6b7280; margin: 0 0 4px; font-size: 14px;">${dateStr}</p>`;
+      if (gig.venueName) {
+        html += `<p style="color: #6b7280; margin: 0 0 4px; font-size: 14px;">${gig.venueName}${gig.venueAddress ? ` — ${gig.venueAddress}` : ""}</p>`;
+      }
+      if (gig.startTime) {
+        html += `<p style="color: #6b7280; margin: 0 0 4px; font-size: 14px;">Start: ${formatTime(gig.startTime)}${gig.endTime ? ` — End: ${formatTime(gig.endTime)}` : ""}</p>`;
+      }
+      html += `</div>`;
+      html += `<p style="color: #374151; margin-bottom: 16px; font-size: 14px;">Your gig pack is attached as a ZIP file containing the setlist and any available charts.</p>`;
+      html += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />`;
+      html += `<p style="color: #9ca3af; font-size: 12px; margin: 0;">Sent by ${senderLabel} via Set List Creator</p>`;
+      html += `</div>`;
+
+      const recipients = confirmedMembers.map((m: any) => m.memberEmail);
+      const zipFileName = `${sanitizeFilename(gig.name)}-gig-pack.zip`;
+
+      await fetch("/api/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: recipients,
+          subject: `${band?.name ?? "Band"} — Gig Pack: ${gig.name}`,
+          html,
+          attachments: [{ filename: zipFileName, content: base64 }]
+        })
+      });
+
+      toast.success(
+        `Gig pack sent to ${confirmedMembers.length} confirmed member${confirmedMembers.length !== 1 ? "s" : ""}`
+      );
+    } catch (e: any) {
+      console.error("Failed to send gig pack:", e);
+      toast.error("Failed to send gig pack", { description: e?.message });
+    } finally {
+      setSendingGigPack(false);
+    }
+  }, [linkedSetlist, setlistItems, allSongs, gigMembers, chartUrls, gig, band, currentUser]);
+
   const dateFormatted = new Date(gig.date).toLocaleDateString("en-NZ", {
     weekday: "long",
     year: "numeric",
@@ -470,6 +636,25 @@ export default function GigDetailPage() {
               onClick={() => handleStatusChange("enquiry")}
             >
               Reopen as Enquiry
+            </Button>
+          )}
+          {gig.setlistId && confirmedCount > 0 && (
+            <Button
+              variant="outline"
+              onClick={handleSendGigPack}
+              disabled={sendingGigPack}
+            >
+              {sendingGigPack ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Package className="h-4 w-4 mr-2" />
+                  Send Gig Pack
+                </>
+              )}
             </Button>
           )}
           <Button
@@ -564,25 +749,25 @@ export default function GigDetailPage() {
               {gig.loadInTime && (
                 <p className="text-sm">
                   <span className="text-muted-foreground">Load-in:</span>{" "}
-                  {gig.loadInTime}
+                  {formatTime(gig.loadInTime)}
                 </p>
               )}
               {gig.soundcheckTime && (
                 <p className="text-sm">
                   <span className="text-muted-foreground">Soundcheck:</span>{" "}
-                  {gig.soundcheckTime}
+                  {formatTime(gig.soundcheckTime)}
                 </p>
               )}
               {gig.startTime && (
                 <p className="text-sm">
                   <span className="text-muted-foreground">Start:</span>{" "}
-                  {gig.startTime}
+                  {formatTime(gig.startTime)}
                 </p>
               )}
               {gig.endTime && (
                 <p className="text-sm">
                   <span className="text-muted-foreground">End:</span>{" "}
-                  {gig.endTime}
+                  {formatTime(gig.endTime)}
                 </p>
               )}
             </CardContent>
@@ -623,6 +808,20 @@ export default function GigDetailPage() {
                 <p className="text-sm text-muted-foreground mt-2">
                   {gig.venueNotes}
                 </p>
+              )}
+              {gig.venueAddress && (
+                <div className="mt-3">
+                  <iframe
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(gig.venueAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                    width="100%"
+                    height="200"
+                    style={{ border: 0 }}
+                    className="rounded-md"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
               )}
             </CardContent>
           </Card>
