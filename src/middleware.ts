@@ -79,9 +79,10 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
     const memberAllowedRoutes = [
       `${bandPrefix}/songs`,           // Song list (read-only)
       `${bandPrefix}/setlists`,        // Setlist list (finalised only)
+      `${bandPrefix}/gigs`,            // Gig list (read-only)
     ];
 
-    // Allow exact matches (song list, setlist list)
+    // Allow exact matches (song list, setlist list, gig list)
     const isExactMatch = memberAllowedRoutes.includes(pathname);
 
     const escapedPrefix = bandPrefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -107,7 +108,16 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
       (setlistDetailPattern.test(pathname) || setlistExportPattern.test(pathname)) &&
       !pathname.endsWith("/new");
 
-    if (!isExactMatch && !isSongDetail && !isSetlistDetail) {
+    // Allow gig detail pages: /{bandSlug}/gigs/{gigId}
+    // but NOT /new
+    const gigDetailPattern = new RegExp(
+      `^${escapedPrefix}/gigs/[^/]+$`
+    );
+    const isGigDetail =
+      gigDetailPattern.test(pathname) &&
+      !pathname.endsWith("/new");
+
+    if (!isExactMatch && !isSongDetail && !isSetlistDetail && !isGigDetail) {
       return nextjsMiddlewareRedirect(
         request,
         `${bandPrefix}/songs`
